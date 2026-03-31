@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - 'develop/**'
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Run unit tests
+        run: mvn -B test
+
+      - name: Compile sample applications
+        run: mvn -B -pl mqtt-plus-samples/sample-basic,mqtt-plus-samples/sample-multi-broker,mqtt-plus-samples/sample-dynamic-subscription -am -DskipTests compile
