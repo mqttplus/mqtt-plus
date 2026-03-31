@@ -30,19 +30,42 @@ public final class PahoMqttClientAdapter implements MqttClientAdapter {
     private final ExecutorService inboundExecutor;
     private final MqttClient mqttClient;
     private final MqttConnectOptions connectOptions;
+    private final String serverUri;
 
     public PahoMqttClientAdapter(MqttBrokerDefinition brokerDefinition,
                                  MqttInboundMessageSink inboundMessageSink) throws MqttException {
         this.brokerDefinition = Objects.requireNonNull(brokerDefinition, "brokerDefinition must not be null");
         this.inboundMessageSink = Objects.requireNonNull(inboundMessageSink, "inboundMessageSink must not be null");
         this.inboundExecutor = Executors.newFixedThreadPool(brokerDefinition.getInboundThreadPool().getCoreSize());
-        this.mqttClient = new MqttClient(buildServerUri(brokerDefinition), brokerDefinition.getClientId(), new MemoryPersistence());
+        this.serverUri = buildServerUri(brokerDefinition);
+        this.mqttClient = new MqttClient(serverUri, brokerDefinition.getClientId(), new MemoryPersistence());
         this.connectOptions = buildConnectOptions(brokerDefinition);
         this.mqttClient.setCallback(new CallbackHandler());
     }
 
     public void addConnectionListener(MqttConnectionListener listener) {
         this.connectionListeners.add(listener);
+    }
+
+    String getServerUri() {
+        return serverUri;
+    }
+
+    MqttConnectOptions getConnectOptions() {
+        return connectOptions;
+    }
+
+    void handleConnectComplete(boolean reconnect, String connectedServerUri) {
+        notifyConnected();
+    }
+
+    void handleConnectionLost(Throwable cause) {
+        notifyConnectionLost(cause);
+    }
+
+    void handleMessage(String topic, MqttMessage message) {
+        byte[] payload = message.getPayload();
+        inboundExecutor.submit(() -> inboundMessageSink.onMessage(getBrokerId(), topic, payload, new MqttHeaders(Map.of("qos", message.getQos()))));
     }
 
     @Override
@@ -162,19 +185,18 @@ public final class PahoMqttClientAdapter implements MqttClientAdapter {
 
     private final class CallbackHandler implements MqttCallbackExtended {
         @Override
-        public void connectComplete(boolean reconnect, String serverURI) {
-            notifyConnected();
+        public void connectComplete(boolean reconnect, String connectedServerUri) {
+            handleConnectComplete(reconnect, connectedServerUri);
         }
 
         @Override
         public void connectionLost(Throwable cause) {
-            notifyConnectionLost(cause);
+            handleConnectionLost(cause);
         }
 
         @Override
         public void messageArrived(String topic, MqttMessage message) {
-            byte[] payload = message.getPayload();
-            inboundExecutor.submit(() -> inboundMessageSink.onMessage(getBrokerId(), topic, payload, new MqttHeaders(Map.of("qos", message.getQos()))));
+            handleMessage(topic, message);
         }
 
         @Override
