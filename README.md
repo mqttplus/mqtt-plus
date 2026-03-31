@@ -152,6 +152,20 @@ Dynamic topic subscription is supported in `v1.0.0`. Dynamic broker connection c
 | `mqtt-plus-spring-boot-starter` | Auto-configuration, YAML binding, built-in converters |
 | `mqtt-plus-test` | Test helpers for fast router-level tests and embedded-test support |
 
+### Comparison
+
+| Feature | mqtt-plus | spring-integration-mqtt | Paho (raw) |
+|---------|:---------:|:----------------------:|:----------:|
+| Annotation-driven listeners | ✅ | ❌ | ❌ |
+| Multi-broker | ✅ | ⚠️ | ❌ |
+| Dynamic subscriptions | ✅ | ⚠️ | ⚠️ |
+| MQTT 5.0 | ✅ | ❌ | ⚠️ |
+| Spring Boot Starter | ✅ | ❌ | ❌ |
+| Non-Spring usage | ✅ | ❌ | ✅ |
+| Interceptor chain | ✅ | ❌ | ❌ |
+| Async publish | ✅ | ⚠️ | ⚠️ |
+| Test helper module | ✅ | ❌ | ❌ |
+
 ### Notes
 
 - `MqttTemplate` requires an explicit broker identifier when publishing
@@ -322,3 +336,13 @@ applicationEventPublisher.publishEvent(
 ### 许可证
 
 Apache 2.0
+
+---
+
+<div align="center">
+
+如果这个项目对你有帮助，欢迎 ⭐ Star！
+
+If this project helps you, please consider giving it a ⭐ Star!
+
+</div>
