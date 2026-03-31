@@ -31,7 +31,7 @@ public void onStatus(DroneStatusEvent event) {
 
 ### Current Scope
 
-This README reflects the reviewed `v1.0.0` scope:
+This README reflects the currently reviewed `v1.0.0` scope:
 
 - Included: `mqtt-plus-core`, `mqtt-plus-paho`, `mqtt-plus-spring`, `mqtt-plus-spring-boot-starter`, `mqtt-plus-test`
 - Deferred: `mqtt-plus-hivemq`, MQTT 5.0 support, dynamic broker connection reconfiguration
@@ -54,13 +54,13 @@ For `v1.0.0`, add both the starter and the Paho adapter explicitly:
 
 ```xml
 <dependency>
-    <groupId>io.github.smartghub</groupId>
+    <groupId>io.github.your-org</groupId>
     <artifactId>mqtt-plus-spring-boot-starter</artifactId>
     <version>1.0.0-SNAPSHOT</version>
 </dependency>
 
 <dependency>
-    <groupId>io.github.smartghub</groupId>
+    <groupId>io.github.your-org</groupId>
     <artifactId>mqtt-plus-paho</artifactId>
     <version>1.0.0-SNAPSHOT</version>
 </dependency>
@@ -175,7 +175,7 @@ Apache 2.0
 
 ### 为什么选择 mqtt-plus？
 
-在 Spring Boot 中使用 MQTT，常常需要为简单的 topic 监听编写大量 channel、adapter 和 handler 样板代码。`mqtt-plus` 希望围绕注解监听、显式 broker 发布和订阅恢复，提供一套更简洁的使用方式。
+在 Spring Boot 中使用 MQTT 时，即使只是监听一个简单的 topic，也经常需要编写大量 channel、adapter 和 handler 样板代码。`mqtt-plus` 希望围绕注解监听、显式 broker 发布和订阅恢复，提供一套更简洁的使用方式。
 
 ```java
 @MqttListener(topic = "drone/+/status", broker = "cloud")
@@ -186,7 +186,7 @@ public void onStatus(DroneStatusEvent event) {
 
 ### 当前范围
 
-本 README 反映的是当前评审收敛后的 `v1.0.0` 范围：
+本 README 对应当前评审收敛后的 `v1.0.0` 范围：
 
 - 已纳入：`mqtt-plus-core`、`mqtt-plus-paho`、`mqtt-plus-spring`、`mqtt-plus-spring-boot-starter`、`mqtt-plus-test`
 - 暂不纳入：`mqtt-plus-hivemq`、MQTT 5.0 支持、broker 连接信息运行时动态变更
@@ -209,13 +209,13 @@ public void onStatus(DroneStatusEvent event) {
 
 ```xml
 <dependency>
-    <groupId>io.github.smartghub</groupId>
+    <groupId>io.github.your-org</groupId>
     <artifactId>mqtt-plus-spring-boot-starter</artifactId>
     <version>1.0.0-SNAPSHOT</version>
 </dependency>
 
 <dependency>
-    <groupId>io.github.smartghub</groupId>
+    <groupId>io.github.your-org</groupId>
     <artifactId>mqtt-plus-paho</artifactId>
     <version>1.0.0-SNAPSHOT</version>
 </dependency>
