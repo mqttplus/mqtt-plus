@@ -134,8 +134,9 @@ public class MqttPlusAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public MqttSubscriptionRefreshEventListener mqttSubscriptionRefreshEventListener(MqttSubscriptionManager subscriptionManager) {
-        return new MqttSubscriptionRefreshEventListener(subscriptionManager);
+    public MqttSubscriptionRefreshEventListener mqttSubscriptionRefreshEventListener(MqttSubscriptionManager subscriptionManager,
+                                                                                     MqttClientAdapterRegistry adapterRegistry) {
+        return new MqttSubscriptionRefreshEventListener(subscriptionManager, adapterRegistry);
     }
 
     @Bean

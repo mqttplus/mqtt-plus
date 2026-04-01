@@ -45,7 +45,7 @@ class MqttPlusAutoConfigurationTest {
         assertNotNull(template);
         assertNotNull(configuration.mqttListenerAnnotationProcessor(configuration.mqttListenerRegistry()));
         assertNotNull(configuration.mqttListenerMethodArgumentResolver());
-        assertNotNull(configuration.mqttSubscriptionRefreshEventListener(configuration.mqttSubscriptionManager()));
+        assertNotNull(configuration.mqttSubscriptionRefreshEventListener(configuration.mqttSubscriptionManager(), configuration.mqttClientAdapterRegistry()));
         assertNotNull(configuration.mqttClientAdapterFactoryRegistry(List.of(new StubFactory())));
     }
 
