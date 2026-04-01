@@ -1,12 +1,11 @@
 package io.github.mqttplus.starter.autoconfigure;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.mqttplus.core.MqttTemplate;
 import io.github.mqttplus.core.router.MqttMessageRouter;
 import io.github.mqttplus.paho.PahoMqttClientAdapterFactory;
 import io.github.mqttplus.starter.properties.MqttPlusProperties;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.support.StaticListableBeanFactory;
 
 import java.util.List;
 
@@ -17,7 +16,7 @@ class MqttPlusAutoConfigurationTest {
     @Test
     void shouldCreateCoreStarterBeans() {
         MqttPlusAutoConfiguration configuration = new MqttPlusAutoConfiguration();
-        ObjectProvider<ObjectMapper> objectMapperProvider = new SimpleObjectProvider<>(new ObjectMapper());
+        StaticListableBeanFactory beanFactory = new StaticListableBeanFactory();
         assertNotNull(configuration.mqttClientAdapterRegistry());
         assertNotNull(configuration.mqttListenerRegistry());
         assertNotNull(configuration.mqttSubscriptionManager());
@@ -25,14 +24,14 @@ class MqttPlusAutoConfigurationTest {
         assertNotNull(configuration.defaultErrorHandlingStrategy());
         assertNotNull(configuration.listenerInvoker());
         assertNotNull(configuration.mqttMessageInterceptors());
-        assertNotNull(configuration.payloadConverters(objectMapperProvider));
+        assertNotNull(configuration.payloadConverters(beanFactory));
 
         MqttMessageRouter router = configuration.mqttMessageRouter(
                 configuration.mqttListenerRegistry(),
                 configuration.listenerInvoker(),
                 configuration.defaultErrorHandlingStrategy(),
                 configuration.errorActionAggregator(),
-                configuration.payloadConverters(objectMapperProvider),
+                configuration.payloadConverters(beanFactory),
                 configuration.mqttMessageInterceptors());
         MqttTemplate template = configuration.mqttTemplate(configuration.mqttClientAdapterRegistry());
 
@@ -68,33 +67,5 @@ class MqttPlusAutoConfigurationTest {
                         configuration.mqttSubscriptionManager()));
 
         assertNotNull(registry.find("primary").orElse(null));
-    }
-
-    private static final class SimpleObjectProvider<T> implements ObjectProvider<T> {
-        private final T value;
-
-        private SimpleObjectProvider(T value) {
-            this.value = value;
-        }
-
-        @Override
-        public T getObject(Object... args) {
-            return value;
-        }
-
-        @Override
-        public T getIfAvailable() {
-            return value;
-        }
-
-        @Override
-        public T getIfUnique() {
-            return value;
-        }
-
-        @Override
-        public T getObject() {
-            return value;
-        }
     }
 }

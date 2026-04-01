@@ -1,6 +1,5 @@
 package io.github.mqttplus.starter.autoconfigure;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.mqttplus.core.DefaultMqttTemplate;
 import io.github.mqttplus.core.MqttTemplate;
 import io.github.mqttplus.core.adapter.DefaultMqttClientAdapterRegistry;
@@ -22,22 +21,25 @@ import io.github.mqttplus.spring.MqttListenerAnnotationProcessor;
 import io.github.mqttplus.spring.event.MqttSubscriptionRefreshEventListener;
 import io.github.mqttplus.spring.invocation.MqttListenerMethodArgumentResolver;
 import io.github.mqttplus.starter.converter.ByteArrayPayloadConverter;
-import io.github.mqttplus.starter.converter.JacksonPayloadConverter;
 import io.github.mqttplus.starter.converter.StringPayloadConverter;
 import io.github.mqttplus.starter.properties.MqttPlusProperties;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.List;
 
 @AutoConfiguration
 @EnableConfigurationProperties(MqttPlusProperties.class)
 public class MqttPlusAutoConfiguration {
+
+    private static final String OBJECT_MAPPER_CLASS_NAME = "com.fasterxml.jackson.databind.ObjectMapper";
+    private static final String JACKSON_CONVERTER_CLASS_NAME = "io.github.mqttplus.starter.converter.JacksonPayloadConverter";
 
     @Bean
     @ConditionalOnMissingBean
@@ -77,14 +79,11 @@ public class MqttPlusAutoConfiguration {
 
     @Bean(name = "mqttPlusPayloadConverters")
     @ConditionalOnMissingBean(name = "mqttPlusPayloadConverters")
-    public List<PayloadConverter> payloadConverters(ObjectProvider<ObjectMapper> objectMapperProvider) {
+    public List<PayloadConverter> payloadConverters(ListableBeanFactory beanFactory) {
         List<PayloadConverter> converters = new ArrayList<>();
         converters.add(new ByteArrayPayloadConverter());
         converters.add(new StringPayloadConverter());
-        ObjectMapper objectMapper = objectMapperProvider.getIfAvailable();
-        if (objectMapper != null) {
-            converters.add(new JacksonPayloadConverter(objectMapper));
-        }
+        addJacksonPayloadConverterIfAvailable(converters, beanFactory);
         return converters;
     }
 
@@ -155,5 +154,24 @@ public class MqttPlusAutoConfiguration {
                 adapterRegistry,
                 mqttMessageRouter::route,
                 subscriptionReconciler);
+    }
+
+    private void addJacksonPayloadConverterIfAvailable(List<PayloadConverter> converters, ListableBeanFactory beanFactory) {
+        try {
+            ClassLoader classLoader = MqttPlusAutoConfiguration.class.getClassLoader();
+            Class<?> objectMapperClass = Class.forName(OBJECT_MAPPER_CLASS_NAME, false, classLoader);
+            Object objectMapper = beanFactory.getBeanProvider(objectMapperClass).getIfAvailable();
+            if (objectMapper == null) {
+                return;
+            }
+            Class<?> converterClass = Class.forName(JACKSON_CONVERTER_CLASS_NAME, false, classLoader);
+            Constructor<?> constructor = converterClass.getConstructor(objectMapperClass);
+            PayloadConverter converter = (PayloadConverter) constructor.newInstance(objectMapper);
+            converters.add(converter);
+        } catch (ClassNotFoundException ex) {
+            // Jackson is optional for starter users; skip JSON conversion when absent.
+        } catch (ReflectiveOperationException ex) {
+            throw new IllegalStateException("Failed to initialize optional Jackson payload converter", ex);
+        }
     }
 }

@@ -2,12 +2,16 @@ package io.github.mqttplus.starter.autoconfigure;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.mqttplus.core.adapter.MqttClientAdapterRegistry;
+import io.github.mqttplus.core.converter.PayloadConverter;
 import io.github.mqttplus.core.router.MqttMessageRouter;
 import io.github.mqttplus.paho.PahoMqttClientAdapterFactory;
 import io.github.mqttplus.starter.properties.MqttPlusProperties;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
+import org.springframework.boot.test.context.FilteredClassLoader;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -38,6 +42,23 @@ class MqttPlusAutoConfigurationIT {
 
                     MqttClientAdapterRegistry registry = context.getBean(MqttClientAdapterRegistry.class);
                     assertThat(registry.find("primary")).isPresent();
+                });
+    }
+
+    @Test
+    void shouldStartWithoutJacksonOnClasspath() {
+        new ApplicationContextRunner()
+                .withClassLoader(new FilteredClassLoader("com.fasterxml.jackson.databind"))
+                .withConfiguration(AutoConfigurations.of(MqttPlusAutoConfiguration.class))
+                .withBean(PahoMqttClientAdapterFactory.class, PahoMqttClientAdapterFactory::new)
+                .withPropertyValues(
+                        "mqtt-plus.brokers.primary.host=127.0.0.1",
+                        "mqtt-plus.brokers.primary.client-id=runner-primary")
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    assertThat(context).hasSingleBean(MqttClientAdapterRegistry.class);
+                    List<PayloadConverter> converters = context.getBean("mqttPlusPayloadConverters", List.class);
+                    assertThat(converters).hasSize(2);
                 });
     }
 
