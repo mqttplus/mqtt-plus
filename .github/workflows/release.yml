@@ -31,6 +31,9 @@ jobs:
       - name: Run tests
         run: mvn -B test
 
+      - name: Run integration tests
+        run: mvn -B -Pintegration-test verify
+
       - name: Publish packages
         run: mvn -B -DskipTests deploy
         env:
