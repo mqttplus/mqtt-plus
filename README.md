@@ -23,9 +23,9 @@
 Using MQTT in Spring Boot often means wiring channels, adapters, and handlers for even simple topic consumption. `mqtt-plus` aims to provide a cleaner model centered on annotations, explicit broker publishing, and subscription recovery.
 
 ```java
-@MqttListener(broker = "cloud", topics = "drone/+/status", payloadType = DroneStatusEvent.class)
-public void onStatus(DroneStatusEvent event) {
-    System.out.println("Drone: " + event.getDroneSn());
+@MqttListener(broker = "cloud", topics = "drone/+/status", payloadType = String.class)
+public void onStatus(String payload) {
+    System.out.println(payload);
 }
 ```
 
@@ -66,6 +66,14 @@ For `v1.0.0`, add both the starter and the Paho adapter explicitly:
 </dependency>
 ```
 
+**JSON payload note**
+
+- `mqtt-plus` always supports `String` and `byte[]` payloads out of the box
+- POJO payload binding requires a JSON `PayloadConverter`
+- If `jackson-databind` is present on the classpath, the starter auto-enables a Jackson-based converter
+- If you prefer another JSON framework, register your own `PayloadConverter` bean instead
+- `jackson-databind` is optional by design, so simple apps do not need it unless they deserialize JSON into objects
+
 **2. Configure brokers**
 
 ```yaml
@@ -92,14 +100,16 @@ public class DroneMessageHandler {
     @MqttListener(broker = "cloud", topics = "drone/+/status", payloadType = String.class)
     public void onStatus(String payload, MqttHeaders headers) {
         System.out.println("Payload: " + payload);
-        System.out.println("Headers: " + headers.asMap());
+        System.out.println("Topic: " + headers.getTopic());
     }
 
     public void sendCommand(String sn, String cmd) {
         mqttTemplate.publishAsync(
                 "cloud",
                 "drone/" + sn + "/command",
-                cmd
+                cmd,
+                1,
+                false
         );
     }
 }
@@ -127,11 +137,15 @@ public void onCloudStatus(String payload) {}
 @MqttListener(broker = "*", topics = "alert/#", payloadType = String.class)
 public void onAlert(String payload) {}
 
-@MqttListener(broker = "cloud", topics = {"drone/+/status", "drone/+/heartbeat"}, payloadType = String.class)
+@MqttListener(
+        broker = "cloud",
+        topics = {"drone/+/status", "drone/+/heartbeat"},
+        payloadType = String.class
+)
 public void onDroneMessage(String payload) {}
 ```
 
-### Dynamic Subscriptions
+### Dynamic Subscription
 
 ```java
 publisher.publishEvent(new MqttSubscriptionRefreshEvent(
@@ -142,17 +156,18 @@ publisher.publishEvent(new MqttSubscriptionRefreshEvent(
 ));
 ```
 
-Dynamic topic subscription is supported in `v1.0.0`. Dynamic broker connection changes are not.
+`v1.0.0` supports dynamic topic subscription updates.  
+It does not support changing broker connection details such as host, port, username, password, or clientId at runtime.
 
-### Module Structure
+### Modules
 
-| Module | Description |
-|--------|-------------|
-| `mqtt-plus-core` | Pure Java core: interfaces, annotations, routing, error handling, subscription reconciliation |
-| `mqtt-plus-paho` | MQTT 3.1.1 adapter via Eclipse Paho v1 |
-| `mqtt-plus-spring` | Spring integration: annotation scanning, argument binding, event bridging |
-| `mqtt-plus-spring-boot-starter` | Auto-configuration, YAML binding, built-in converters |
-| `mqtt-plus-test` | Test helpers for fast router-level tests and Spring test wiring |
+| Module | Purpose |
+|------|------|
+| `mqtt-plus-core` | Pure Java core abstractions, routing, subscription reconciliation, and SPI |
+| `mqtt-plus-paho` | Eclipse Paho v1 adapter for MQTT 3.1.1 |
+| `mqtt-plus-spring` | Spring integration for annotation scanning, method resolution, and event bridging |
+| `mqtt-plus-spring-boot-starter` | Auto-configuration, YAML binding, and default converter setup |
+| `mqtt-plus-test` | Test helpers for router-level testing and Spring test wiring |
 
 ### Comparison
 
@@ -170,9 +185,9 @@ Dynamic topic subscription is supported in `v1.0.0`. Dynamic broker connection c
 
 ### Notes
 
-- `MqttTemplate` requires an explicit broker identifier when publishing
-- `MqttTestTemplate.simulateIncoming(...)` is a fast test helper, not a full MQTT protocol substitute
-- Runtime updates of broker host, port, username, password, or client ID are out of scope for `v1.0.0`
+- `MqttTemplate` requires an explicit broker id for publishing
+- `MqttTestTemplate.simulateIncoming(...)` is a fast router-level testing utility, not a full MQTT protocol simulator
+- Runtime broker connection reconfiguration is outside the `v1.0.0` scope
 
 ### Requirements
 
@@ -189,39 +204,39 @@ Apache 2.0
 
 ## 中文
 
-### 为什么选择 mqtt-plus？
+### 为什么是 mqtt-plus？
 
-在 Spring Boot 中接入 MQTT，哪怕只是监听一个简单的 topic，往往也要手动组装 channel、adapter 和 handler。`mqtt-plus` 希望提供一种更直接的使用方式，把关注点放在注解监听、显式 broker 发布和订阅恢复上。
+在 Spring Boot 中使用 MQTT，哪怕只是做一个简单的 topic 监听，往往也要手动组装 channel、adapter 和 handler。`mqtt-plus` 希望把这些样板配置收敛起来，提供一套以注解、显式 broker 发布和订阅恢复为中心的开发模型。
 
 ```java
-@MqttListener(broker = "cloud", topics = "drone/+/status", payloadType = DroneStatusEvent.class)
-public void onStatus(DroneStatusEvent event) {
-    System.out.println("无人机: " + event.getDroneSn());
+@MqttListener(broker = "cloud", topics = "drone/+/status", payloadType = String.class)
+public void onStatus(String payload) {
+    System.out.println(payload);
 }
 ```
 
 ### 当前范围
 
-本 README 对应当前已经实现并完成评审的 `v1.0.0` 范围：
+本 README 对应当前已经实现并评审收敛的 `v1.0.0` 范围：
 
-- 已纳入：`mqtt-plus-core`、`mqtt-plus-paho`、`mqtt-plus-spring`、`mqtt-plus-spring-boot-starter`、`mqtt-plus-test`
-- 暂不纳入：`mqtt-plus-hivemq`、MQTT 5.0 支持、broker 连接信息运行时动态变更
+- 已包含：`mqtt-plus-core`、`mqtt-plus-paho`、`mqtt-plus-spring`、`mqtt-plus-spring-boot-starter`、`mqtt-plus-test`
+- 暂缓：`mqtt-plus-hivemq`、MQTT 5.0 支持、运行时动态修改 broker 连接信息
 
-### 核心能力
+### 功能特性
 
-- `@MqttListener`：基于注解的监听注册，支持 MQTT 通配符（`+`、`#`）
-- 多 Broker：同一个应用可连接多个 MQTT Broker
-- 动态订阅：支持运行时新增或移除 topic
-- 重连恢复：断线重连后恢复静态和动态订阅
-- `MqttTemplate`：显式 broker 的同步 / 异步发布 API
+- `@MqttListener`：注解驱动的监听注册，支持 MQTT 通配符（`+`、`#`）
+- 多 broker：一个应用可以同时连接多个 MQTT broker
+- 动态订阅：支持在运行时增加或移除 topic
+- 重连恢复：连接恢复后自动恢复静态和动态订阅
+- `MqttTemplate`：显式指定 broker 的同步/异步发布 API
 - 拦截器链：支持 `beforeHandle` / `afterHandle` / `onError`
-- Spring Boot 优先、非 Spring 可用：核心抽象在非 Spring 环境下也可使用
+- 以 Spring Boot 为主，同时保留非 Spring 使用能力
 
 ### 快速开始
 
 **1. 添加依赖**
 
-对于 `v1.0.0`，需要显式同时引入 starter 和 Paho 适配器：
+在 `v1.0.0` 中，请显式同时引入 starter 和 Paho 适配器：
 
 ```xml
 <dependency>
@@ -237,7 +252,15 @@ public void onStatus(DroneStatusEvent event) {
 </dependency>
 ```
 
-**2. 配置 Broker**
+**JSON 负载说明**
+
+- `mqtt-plus` 默认始终支持 `String` 和 `byte[]` 负载
+- 如果要把消息直接反序列化为 POJO，需要提供 JSON `PayloadConverter`
+- 当类路径中存在 `jackson-databind` 时，starter 会自动启用基于 Jackson 的 converter
+- 如果你更希望使用其他 JSON 框架，也可以自己注册 `PayloadConverter` Bean
+- `jackson-databind` 是可选依赖，简单应用如果不做 JSON 对象反序列化，可以不引入
+
+**2. 配置 broker**
 
 ```yaml
 mqtt-plus:
@@ -248,7 +271,7 @@ mqtt-plus:
       clientId: my-app-001
 ```
 
-**3. 监听与发布**
+**3. 监听和发布**
 
 ```java
 @Component
@@ -263,20 +286,22 @@ public class DroneMessageHandler {
     @MqttListener(broker = "cloud", topics = "drone/+/status", payloadType = String.class)
     public void onStatus(String payload, MqttHeaders headers) {
         System.out.println("Payload: " + payload);
-        System.out.println("Headers: " + headers.asMap());
+        System.out.println("Topic: " + headers.getTopic());
     }
 
     public void sendCommand(String sn, String cmd) {
         mqttTemplate.publishAsync(
                 "cloud",
                 "drone/" + sn + "/command",
-                cmd
+                cmd,
+                1,
+                false
         );
     }
 }
 ```
 
-### 多 Broker 示例
+### 多 broker 示例
 
 ```yaml
 mqtt-plus:
@@ -298,7 +323,11 @@ public void onCloudStatus(String payload) {}
 @MqttListener(broker = "*", topics = "alert/#", payloadType = String.class)
 public void onAlert(String payload) {}
 
-@MqttListener(broker = "cloud", topics = {"drone/+/status", "drone/+/heartbeat"}, payloadType = String.class)
+@MqttListener(
+        broker = "cloud",
+        topics = {"drone/+/status", "drone/+/heartbeat"},
+        payloadType = String.class
+)
 public void onDroneMessage(String payload) {}
 ```
 
@@ -313,18 +342,18 @@ publisher.publishEvent(new MqttSubscriptionRefreshEvent(
 ));
 ```
 
-`v1.0.0` 支持动态 topic 订阅。  
-不支持运行时动态修改 broker 连接参数。
+`v1.0.0` 支持动态增删 topic。  
+但暂不支持在运行时动态修改 broker 的 host、port、username、password 或 clientId。
 
 ### 模块说明
 
 | 模块 | 说明 |
 |------|------|
-| `mqtt-plus-core` | 纯 Java 核心：接口、注解、路由、错误处理、订阅协调 |
+| `mqtt-plus-core` | 纯 Java 核心抽象、路由、订阅协调和 SPI |
 | `mqtt-plus-paho` | 基于 Eclipse Paho v1 的 MQTT 3.1.1 适配器 |
-| `mqtt-plus-spring` | Spring 集成：注解扫描、参数绑定、事件桥接 |
-| `mqtt-plus-spring-boot-starter` | 自动配置、YAML 绑定、内置转换器 |
-| `mqtt-plus-test` | 用于快速 router 级测试和 Spring 测试装配的辅助模块 |
+| `mqtt-plus-spring` | Spring 注解扫描、方法参数解析和事件桥接 |
+| `mqtt-plus-spring-boot-starter` | 自动配置、YAML 绑定和默认 converter 装配 |
+| `mqtt-plus-test` | 用于 router 级测试和 Spring 测试装配的辅助模块 |
 
 ### 对比
 
@@ -342,11 +371,11 @@ publisher.publishEvent(new MqttSubscriptionRefreshEvent(
 
 ### 说明
 
-- `MqttTemplate` 发布时必须显式指定 broker
-- `MqttTestTemplate.simulateIncoming(...)` 是快速测试工具，不等同于完整 MQTT 协议仿真
-- 运行时修改 broker 的 host、port、username、password、clientId 不在 `v1.0.0` 范围内
+- `MqttTemplate` 发布时必须显式指定 broker id
+- `MqttTestTemplate.simulateIncoming(...)` 是 router 级快速测试工具，不是完整的 MQTT 协议仿真
+- 运行时动态更新 broker 连接参数不在 `v1.0.0` 范围内
 
-### 环境要求
+### 运行要求
 
 - Java 17+
 - Spring Boot 2.7+
