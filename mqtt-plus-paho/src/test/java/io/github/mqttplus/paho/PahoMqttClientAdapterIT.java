@@ -16,6 +16,7 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
+import org.testcontainers.utility.MountableFile;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -33,6 +34,9 @@ class PahoMqttClientAdapterIT {
 
     @Container
     static final GenericContainer<?> MOSQUITTO = new GenericContainer<>(DockerImageName.parse("eclipse-mosquitto:2.0"))
+            .withCopyFileToContainer(
+                    MountableFile.forClasspathResource("mosquitto/mosquitto.conf"),
+                    "/mosquitto/config/mosquitto.conf")
             .withExposedPorts(1883)
             .withStartupTimeout(Duration.ofSeconds(30));
 
