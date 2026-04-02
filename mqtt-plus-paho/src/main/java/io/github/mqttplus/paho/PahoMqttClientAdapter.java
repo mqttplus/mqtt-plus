@@ -166,6 +166,7 @@ public final class PahoMqttClientAdapter implements MqttClientAdapter {
         }
         options.setKeepAliveInterval(brokerDefinition.getKeepAliveInterval());
         options.setConnectionTimeout(brokerDefinition.getConnectionTimeout());
+        options.setCleanSession(brokerDefinition.isCleanSession());
         options.setAutomaticReconnect(false);
         return options;
     }

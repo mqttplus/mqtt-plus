@@ -1,14 +1,13 @@
-package io.github.mqttplus.paho;
+package io.github.mqttplus.integration;
 
 import io.github.mqttplus.core.adapter.MqttClientAdapter;
 import io.github.mqttplus.core.adapter.MqttClientAdapterFactory;
 import io.github.mqttplus.core.adapter.MqttInboundMessageSink;
 import io.github.mqttplus.core.model.MqttBrokerDefinition;
-import org.eclipse.paho.client.mqttv3.MqttException;
 
-public final class PahoMqttClientAdapterFactory implements MqttClientAdapterFactory {
+public final class SpringIntegrationMqttClientAdapterFactory implements MqttClientAdapterFactory {
 
-    public static final String ADAPTER_ID = "paho";
+    public static final String ADAPTER_ID = "spring-integration";
     public static final String SUPPORTED_MQTT_VERSION = "3.1.1";
 
     @Override
@@ -23,10 +22,6 @@ public final class PahoMqttClientAdapterFactory implements MqttClientAdapterFact
 
     @Override
     public MqttClientAdapter create(MqttBrokerDefinition brokerDefinition, MqttInboundMessageSink inboundMessageSink) {
-        try {
-            return new PahoMqttClientAdapter(brokerDefinition, inboundMessageSink);
-        } catch (MqttException ex) {
-            throw new IllegalStateException("Failed to create Paho adapter", ex);
-        }
+        return new SpringIntegrationMqttClientAdapter(brokerDefinition, inboundMessageSink);
     }
 }

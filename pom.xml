@@ -6,7 +6,7 @@
 
     <groupId>io.github.mqttplus</groupId>
     <artifactId>mqtt-plus-parent</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>mqtt-plus-parent</name>
@@ -45,6 +45,7 @@
         <paho.version>1.2.5</paho.version>
         <spring.version>5.3.31</spring.version>
         <spring.boot.version>2.7.18</spring.boot.version>
+        <spring.integration.mqtt.version>5.5.15</spring.integration.mqtt.version>
         <jackson.version>2.15.3</jackson.version>
         <junit.version>5.10.1</junit.version>
         <mockito.version>5.8.0</mockito.version>
@@ -59,6 +60,7 @@
     <modules>
         <module>mqtt-plus-core</module>
         <module>mqtt-plus-paho</module>
+        <module>mqtt-plus-spring-integration</module>
         <module>mqtt-plus-spring</module>
         <module>mqtt-plus-spring-boot-starter</module>
         <module>mqtt-plus-test</module>
@@ -86,6 +88,11 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-autoconfigure</artifactId>
                 <version>${spring.boot.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.integration</groupId>
+                <artifactId>spring-integration-mqtt</artifactId>
+                <version>${spring.integration.mqtt.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>

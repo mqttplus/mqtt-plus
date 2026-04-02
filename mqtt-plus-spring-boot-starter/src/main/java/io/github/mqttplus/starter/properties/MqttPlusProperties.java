@@ -17,12 +17,14 @@ public class MqttPlusProperties {
     }
 
     public static class BrokerProperties {
+        private String adapter;
         private String mqttVersion = "3.1.1";
         private String host;
         private int port = 1883;
         private String clientId;
         private String username;
         private String password;
+        private boolean cleanSession = true;
         private boolean sslEnabled;
         private int keepAliveInterval = 60;
         private int connectionTimeout = 30;
@@ -30,6 +32,14 @@ public class MqttPlusProperties {
         private int inboundMaxSize = ThreadPoolConfig.DEFAULT_MAX_SIZE;
         private int inboundQueueCapacity = ThreadPoolConfig.DEFAULT_QUEUE_CAPACITY;
         private String inboundRejectedPolicy = ThreadPoolConfig.DEFAULT_REJECTED_POLICY;
+
+        public String getAdapter() {
+            return adapter;
+        }
+
+        public void setAdapter(String adapter) {
+            this.adapter = adapter;
+        }
 
         public String getMqttVersion() {
             return mqttVersion;
@@ -77,6 +87,14 @@ public class MqttPlusProperties {
 
         public void setPassword(String password) {
             this.password = password;
+        }
+
+        public boolean isCleanSession() {
+            return cleanSession;
+        }
+
+        public void setCleanSession(boolean cleanSession) {
+            this.cleanSession = cleanSession;
         }
 
         public boolean isSslEnabled() {
@@ -149,6 +167,7 @@ public class MqttPlusProperties {
                     .clientId(clientId)
                     .username(username)
                     .password(password)
+                    .cleanSession(cleanSession)
                     .sslEnabled(sslEnabled)
                     .keepAliveInterval(keepAliveInterval)
                     .connectionTimeout(connectionTimeout)

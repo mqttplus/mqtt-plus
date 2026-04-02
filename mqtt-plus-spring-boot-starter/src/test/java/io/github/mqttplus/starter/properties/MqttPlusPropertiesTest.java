@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MqttPlusPropertiesTest {
 
@@ -20,6 +21,7 @@ class MqttPlusPropertiesTest {
         assertEquals(1883, definition.getPort());
         assertEquals(60, definition.getKeepAliveInterval());
         assertEquals(30, definition.getConnectionTimeout());
+        assertTrue(definition.isCleanSession());
         assertEquals(2, definition.getInboundThreadPool().getCoreSize());
     }
 

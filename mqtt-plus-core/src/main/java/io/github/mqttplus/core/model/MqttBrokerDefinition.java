@@ -10,6 +10,7 @@ public final class MqttBrokerDefinition {
     private final String clientId;
     private final String username;
     private final String password;
+    private final boolean cleanSession;
     private final boolean sslEnabled;
     private final int keepAliveInterval;
     private final int connectionTimeout;
@@ -22,6 +23,7 @@ public final class MqttBrokerDefinition {
         this.clientId = requireText(builder.clientId, "clientId");
         this.username = builder.username;
         this.password = builder.password;
+        this.cleanSession = builder.cleanSession;
         this.sslEnabled = builder.sslEnabled;
         this.keepAliveInterval = builder.keepAliveInterval;
         this.connectionTimeout = builder.connectionTimeout;
@@ -65,6 +67,10 @@ public final class MqttBrokerDefinition {
         return password;
     }
 
+    public boolean isCleanSession() {
+        return cleanSession;
+    }
+
     public boolean isSslEnabled() {
         return sslEnabled;
     }
@@ -96,6 +102,7 @@ public final class MqttBrokerDefinition {
         private String clientId;
         private String username;
         private String password;
+        private boolean cleanSession = true;
         private boolean sslEnabled;
         private int keepAliveInterval = 60;
         private int connectionTimeout = 30;
@@ -128,6 +135,11 @@ public final class MqttBrokerDefinition {
 
         public Builder password(String password) {
             this.password = password;
+            return this;
+        }
+
+        public Builder cleanSession(boolean cleanSession) {
+            this.cleanSession = cleanSession;
             return this;
         }
 

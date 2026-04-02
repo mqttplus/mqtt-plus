@@ -74,8 +74,13 @@ class MqttBrokerAutoConfigurationTest {
         }
 
         @Override
-        public String supportedVersion() {
-            return "3.1.1";
+        public String adapterId() {
+            return "paho";
+        }
+
+        @Override
+        public boolean supportsMqttVersion(String mqttVersion) {
+            return "3.1.1".equals(mqttVersion);
         }
 
         @Override

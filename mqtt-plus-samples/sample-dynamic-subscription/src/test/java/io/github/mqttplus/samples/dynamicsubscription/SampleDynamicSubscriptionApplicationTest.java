@@ -13,7 +13,7 @@ import org.springframework.context.annotation.Import;
 
 import java.util.concurrent.CompletableFuture;
 
-@SpringBootTest
+@SpringBootTest(properties = "mqtt-plus.brokers.primary.adapter=paho")
 @Import(SampleDynamicSubscriptionApplicationTest.TestConfig.class)
 class SampleDynamicSubscriptionApplicationTest {
 
@@ -31,8 +31,13 @@ class SampleDynamicSubscriptionApplicationTest {
 
     private static final class StubFactory implements MqttClientAdapterFactory {
         @Override
-        public String supportedVersion() {
-            return "3.1.1";
+        public String adapterId() {
+            return "paho";
+        }
+
+        @Override
+        public boolean supportsMqttVersion(String mqttVersion) {
+            return "3.1.1".equals(mqttVersion);
         }
 
         @Override

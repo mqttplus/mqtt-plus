@@ -42,6 +42,7 @@ public class MqttPlusAutoConfiguration {
     private static final String OBJECT_MAPPER_CLASS_NAME = "com.fasterxml.jackson.databind.ObjectMapper";
     private static final String JACKSON_CONVERTER_CLASS_NAME = "io.github.mqttplus.starter.converter.JacksonPayloadConverter";
     private static final String PAHO_FACTORY_CLASS_NAME = "io.github.mqttplus.paho.PahoMqttClientAdapterFactory";
+    private static final String SPRING_INTEGRATION_FACTORY_CLASS_NAME = "io.github.mqttplus.integration.SpringIntegrationMqttClientAdapterFactory";
 
     @Bean
     @ConditionalOnMissingBean
@@ -143,7 +144,14 @@ public class MqttPlusAutoConfiguration {
     @ConditionalOnClass(name = PAHO_FACTORY_CLASS_NAME)
     @ConditionalOnMissingBean(name = "pahoMqttClientAdapterFactory")
     public MqttClientAdapterFactory pahoMqttClientAdapterFactory() {
-        return instantiatePahoFactory();
+        return instantiateFactory(PAHO_FACTORY_CLASS_NAME);
+    }
+
+    @Bean
+    @ConditionalOnClass(name = SPRING_INTEGRATION_FACTORY_CLASS_NAME)
+    @ConditionalOnMissingBean(name = "springIntegrationMqttClientAdapterFactory")
+    public MqttClientAdapterFactory springIntegrationMqttClientAdapterFactory() {
+        return instantiateFactory(SPRING_INTEGRATION_FACTORY_CLASS_NAME);
     }
 
     @Bean
@@ -178,19 +186,22 @@ public class MqttPlusAutoConfiguration {
             Constructor<?> constructor = converterClass.getConstructor(objectMapperClass);
             PayloadConverter converter = (PayloadConverter) constructor.newInstance(objectMapper);
             converters.add(converter);
-        } catch (ClassNotFoundException ex) {
+        }
+        catch (ClassNotFoundException ex) {
             // Jackson is optional for starter users; skip JSON conversion when absent.
-        } catch (ReflectiveOperationException ex) {
+        }
+        catch (ReflectiveOperationException ex) {
             throw new IllegalStateException("Failed to initialize optional Jackson payload converter", ex);
         }
     }
 
-    private MqttClientAdapterFactory instantiatePahoFactory() {
+    private MqttClientAdapterFactory instantiateFactory(String factoryClassName) {
         try {
-            Class<?> factoryClass = Class.forName(PAHO_FACTORY_CLASS_NAME, false, resolveApplicationClassLoader());
+            Class<?> factoryClass = Class.forName(factoryClassName, false, resolveApplicationClassLoader());
             return (MqttClientAdapterFactory) factoryClass.getDeclaredConstructor().newInstance();
-        } catch (ReflectiveOperationException ex) {
-            throw new IllegalStateException("Failed to initialize optional Paho MQTT adapter factory", ex);
+        }
+        catch (ReflectiveOperationException ex) {
+            throw new IllegalStateException("Failed to initialize optional MQTT adapter factory: " + factoryClassName, ex);
         }
     }
 

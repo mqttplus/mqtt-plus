@@ -27,18 +27,21 @@ class MqttPlusAutoConfigurationIT {
             .withBean(ObjectMapper.class, ObjectMapper::new);
 
     @Test
-    void shouldAutoRegisterPahoFactoryBeanWhenPahoIsOnClasspath() {
+    void shouldAutoRegisterAvailableAdapterFactories() {
         contextRunner.run(context -> {
-            assertThat(context).hasSingleBean(MqttClientAdapterFactory.class);
-            assertThat(context.getBean(MqttClientAdapterFactory.class).getClass().getName())
+            assertThat(context).hasBean("pahoMqttClientAdapterFactory");
+            assertThat(context).hasBean("springIntegrationMqttClientAdapterFactory");
+            assertThat(context.getBean("pahoMqttClientAdapterFactory", MqttClientAdapterFactory.class).getClass().getName())
                     .isEqualTo("io.github.mqttplus.paho.PahoMqttClientAdapterFactory");
+            assertThat(context.getBean("springIntegrationMqttClientAdapterFactory", MqttClientAdapterFactory.class).getClass().getName())
+                    .isEqualTo("io.github.mqttplus.integration.SpringIntegrationMqttClientAdapterFactory");
         });
     }
 
     @Test
     void shouldBindBrokerPropertiesAndRegisterAdapterWithCustomFactory() {
         contextRunner
-                .withClassLoader(new FilteredClassLoader("io.github.mqttplus.paho"))
+                .withClassLoader(new FilteredClassLoader("io.github.mqttplus.paho", "io.github.mqttplus.integration"))
                 .withBean(MqttClientAdapterFactory.class, StubFactory::new)
                 .withPropertyValues(
                         "mqtt-plus.brokers.primary.host=127.0.0.1",
@@ -54,10 +57,24 @@ class MqttPlusAutoConfigurationIT {
                     assertThat(properties.getBrokers()).containsKey("primary");
                     assertThat(properties.getBrokers().get("primary").getClientId()).isEqualTo("runner-primary");
                     assertThat(properties.getBrokers().get("primary").getKeepAliveInterval()).isEqualTo(45);
+                    assertThat(properties.getBrokers().get("primary").getAdapter()).isNull();
+                    assertThat(properties.getBrokers().get("primary").isCleanSession()).isTrue();
 
                     MqttClientAdapterRegistry registry = context.getBean(MqttClientAdapterRegistry.class);
                     assertThat(registry.find("primary")).isPresent();
                     assertThat(((StubAdapter) registry.find("primary").orElseThrow()).connected).isTrue();
+                });
+    }
+
+    @Test
+    void shouldPreferSpringIntegrationWhenMultipleFactoriesAreAvailable() {
+        contextRunner
+                .withPropertyValues(
+                        "mqtt-plus.brokers.primary.host=127.0.0.1",
+                        "mqtt-plus.brokers.primary.client-id=runner-primary")
+                .run(context -> {
+                    MqttClientAdapterFactoryRegistry registry = context.getBean(MqttClientAdapterFactoryRegistry.class);
+                    assertThat(registry.resolveFactory(null, "3.1.1").adapterId()).isEqualTo("spring-integration");
                 });
     }
 
@@ -76,7 +93,7 @@ class MqttPlusAutoConfigurationIT {
     @Test
     void shouldFailFastWhenPahoFactoryIsMissingFromClasspath() {
         new ApplicationContextRunner()
-                .withClassLoader(new FilteredClassLoader("io.github.mqttplus.paho"))
+                .withClassLoader(new FilteredClassLoader("io.github.mqttplus.paho", "io.github.mqttplus.integration"))
                 .withConfiguration(AutoConfigurations.of(MqttPlusAutoConfiguration.class))
                 .withBean(ObjectMapper.class, ObjectMapper::new)
                 .withPropertyValues(
@@ -85,14 +102,14 @@ class MqttPlusAutoConfigurationIT {
                 .run(context -> {
                     assertThat(context.getStartupFailure()).isNotNull();
                     assertThat(context.getStartupFailure())
-                            .hasMessageContaining("No MQTT adapter factory registered for version: 3.1.1");
+                            .hasMessageContaining("No MQTT adapter factory registered for adapter: paho");
                 });
     }
 
     @Test
     void shouldFailFastWhenAdapterFactoryIsMissing() {
         new ApplicationContextRunner()
-                .withClassLoader(new FilteredClassLoader("io.github.mqttplus.paho"))
+                .withClassLoader(new FilteredClassLoader("io.github.mqttplus.paho", "io.github.mqttplus.integration"))
                 .withConfiguration(AutoConfigurations.of(MqttPlusAutoConfiguration.class))
                 .withBean(ObjectMapper.class, ObjectMapper::new)
                 .withPropertyValues(
@@ -108,8 +125,13 @@ class MqttPlusAutoConfigurationIT {
 
     private static final class StubFactory implements MqttClientAdapterFactory {
         @Override
-        public String supportedVersion() {
-            return "3.1.1";
+        public String adapterId() {
+            return "paho";
+        }
+
+        @Override
+        public boolean supportsMqttVersion(String mqttVersion) {
+            return "3.1.1".equals(mqttVersion);
         }
 
         @Override

@@ -21,7 +21,9 @@ public class MqttBrokerAutoConfiguration {
             String brokerId = entry.getKey();
             MqttPlusProperties.BrokerProperties brokerProperties = entry.getValue();
             MqttBrokerDefinition definition = brokerProperties.toDefinition(brokerId);
-            MqttClientAdapterFactory factory = factoryRegistry.getRequiredFactory(brokerProperties.getMqttVersion());
+            MqttClientAdapterFactory factory = factoryRegistry.resolveFactory(
+                    brokerProperties.getAdapter(),
+                    brokerProperties.getMqttVersion());
             MqttClientAdapter adapter = factory.create(definition, inboundMessageSink);
             adapter.addConnectionListener(connectionListener);
             adapterRegistry.register(adapter);

@@ -35,7 +35,8 @@ class PahoMqttClientAdapterFactoryTest {
         MqttClientAdapter adapter = factory.create(definition, (brokerId, topic, payload, headers) -> {
         });
 
-        assertEquals(PahoMqttClientAdapterFactory.SUPPORTED_VERSION, factory.supportedVersion());
+        assertEquals(PahoMqttClientAdapterFactory.ADAPTER_ID, factory.adapterId());
+        assertTrue(factory.supportsMqttVersion(PahoMqttClientAdapterFactory.SUPPORTED_MQTT_VERSION));
         assertInstanceOf(PahoMqttClientAdapter.class, adapter);
         assertEquals("primary", adapter.getBrokerId());
         assertFalse(adapter.supportsManualAck());
@@ -51,6 +52,7 @@ class PahoMqttClientAdapterFactoryTest {
                 .username("mqtt-user")
                 .password("secret")
                 .sslEnabled(true)
+                .cleanSession(false)
                 .keepAliveInterval(45)
                 .connectionTimeout(12)
                 .inboundThreadPool(ThreadPoolConfig.builder().coreSize(1).build())
@@ -64,6 +66,7 @@ class PahoMqttClientAdapterFactoryTest {
         assertNotNull(adapter.getConnectOptions().getPassword());
         assertEquals(45, adapter.getConnectOptions().getKeepAliveInterval());
         assertEquals(12, adapter.getConnectOptions().getConnectionTimeout());
+        assertFalse(adapter.getConnectOptions().isCleanSession());
         assertFalse(adapter.getConnectOptions().isAutomaticReconnect());
     }
 
