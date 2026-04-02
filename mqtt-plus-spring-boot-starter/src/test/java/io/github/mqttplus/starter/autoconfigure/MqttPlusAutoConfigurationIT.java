@@ -68,14 +68,10 @@ class MqttPlusAutoConfigurationIT {
 
     @Test
     void shouldPreferSpringIntegrationWhenMultipleFactoriesAreAvailable() {
-        contextRunner
-                .withPropertyValues(
-                        "mqtt-plus.brokers.primary.host=127.0.0.1",
-                        "mqtt-plus.brokers.primary.client-id=runner-primary")
-                .run(context -> {
-                    MqttClientAdapterFactoryRegistry registry = context.getBean(MqttClientAdapterFactoryRegistry.class);
-                    assertThat(registry.resolveFactory(null, "3.1.1").adapterId()).isEqualTo("spring-integration");
-                });
+        contextRunner.run(context -> {
+            MqttClientAdapterFactoryRegistry registry = context.getBean(MqttClientAdapterFactoryRegistry.class);
+            assertThat(registry.resolveFactory(null, "3.1.1").adapterId()).isEqualTo("spring-integration");
+        });
     }
 
     @Test
@@ -98,7 +94,8 @@ class MqttPlusAutoConfigurationIT {
                 .withBean(ObjectMapper.class, ObjectMapper::new)
                 .withPropertyValues(
                         "mqtt-plus.brokers.primary.host=127.0.0.1",
-                        "mqtt-plus.brokers.primary.client-id=runner-primary")
+                        "mqtt-plus.brokers.primary.client-id=runner-primary",
+                        "mqtt-plus.brokers.primary.adapter=paho")
                 .run(context -> {
                     assertThat(context.getStartupFailure()).isNotNull();
                     assertThat(context.getStartupFailure())

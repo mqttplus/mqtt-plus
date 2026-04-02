@@ -180,15 +180,15 @@ All three samples are covered by smoke tests in CI.
 
 | Feature | mqtt-plus | spring-integration-mqtt | Paho (raw) |
 |---------|:---------:|:----------------------:|:----------:|
-| Annotation-driven listeners | Yes | No | No |
-| Multi-broker | Yes | Partial | No |
-| Dynamic subscriptions | Yes | Partial | Partial |
-| MQTT 5.0 | Planned | No | Partial |
-| Spring Boot Starter | Yes | No | No |
-| Non-Spring usage | Yes | No | Yes |
-| Interceptor chain | Yes | No | No |
-| Async publish | Yes | Partial | Partial |
-| Test helper module | Yes | No | No |
+| Annotation-driven listeners | ✅ | ❌ | ❌ |
+| Multi-broker | ✅ | ⚠️ | ❌ |
+| Dynamic subscriptions | ✅ | ⚠️ | ⚠️ |
+| MQTT 5.0 | ⚠️ | ❌ | ⚠️ |
+| Spring Boot Starter | ✅ | ❌ | ❌ |
+| Non-Spring usage | ✅ | ❌ | ✅ |
+| Interceptor chain | ✅ | ❌ | ❌ |
+| Async publish | ✅ | ⚠️ | ⚠️ |
+| Test helper module | ✅ | ❌ | ❌ |
 
 ### Notes
 
@@ -373,15 +373,15 @@ publisher.publishEvent(new MqttSubscriptionRefreshEvent(
 
 | 功能 | mqtt-plus | spring-integration-mqtt | Paho 原生 |
 |------|:---------:|:----------------------:|:---------:|
-| 注解驱动监听 | Yes | No | No |
-| 多 broker | Yes | Partial | No |
-| 动态订阅 | Yes | Partial | Partial |
-| MQTT 5.0 | Planned | No | Partial |
-| Spring Boot Starter | Yes | No | No |
-| 非 Spring 使用 | Yes | No | Yes |
-| 拦截器链 | Yes | No | No |
-| 异步发布 | Yes | Partial | Partial |
-| 测试辅助模块 | Yes | No | No |
+| 注解驱动监听 | ✅ | ❌ | ❌ |
+| 多 broker | ✅ | ⚠️ | ❌ |
+| 动态订阅 | ✅ | ⚠️ | ⚠️ |
+| MQTT 5.0 | ⚠️ | ❌ | ⚠️ |
+| Spring Boot Starter | ✅ | ❌ | ❌ |
+| 非 Spring 使用 | ✅ | ❌ | ✅ |
+| 拦截器链 | ✅ | ❌ | ❌ |
+| 异步发布 | ✅ | ⚠️ | ⚠️ |
+| 测试辅助模块 | ✅ | ❌ | ❌ |
 
 ### 说明
 
@@ -400,8 +400,8 @@ Apache 2.0
 
 <div align="center">
 
-如果这个项目对你有帮助，欢迎 Star。
+如果这个项目对你有帮助，欢迎 ⭐ Star！
 
-If this project helps you, please consider giving it a Star.
+If this project helps you, please consider giving it a ⭐ Star!
 
 </div>

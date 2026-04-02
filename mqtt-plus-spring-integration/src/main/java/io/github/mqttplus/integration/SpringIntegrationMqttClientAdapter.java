@@ -11,6 +11,7 @@ import org.springframework.integration.mqtt.core.DefaultMqttPahoClientFactory;
 import org.springframework.integration.mqtt.inbound.MqttPahoMessageDrivenChannelAdapter;
 import org.springframework.integration.mqtt.outbound.MqttPahoMessageHandler;
 import org.springframework.messaging.Message;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -209,6 +210,11 @@ public final class SpringIntegrationMqttClientAdapter implements MqttClientAdapt
                                                                            DefaultMqttPahoClientFactory clientFactory) {
         MqttPahoMessageDrivenChannelAdapter adapter =
                 new MqttPahoMessageDrivenChannelAdapter(serverUri, brokerDefinition.getClientId(), clientFactory);
+        ThreadPoolTaskScheduler taskScheduler = new ThreadPoolTaskScheduler();
+        taskScheduler.setPoolSize(1);
+        taskScheduler.setThreadNamePrefix("mqtt-plus-integration-");
+        taskScheduler.initialize();
+        adapter.setTaskScheduler(taskScheduler);
         adapter.setCompletionTimeout(5000);
         adapter.setRecoveryInterval(2000);
         return adapter;
