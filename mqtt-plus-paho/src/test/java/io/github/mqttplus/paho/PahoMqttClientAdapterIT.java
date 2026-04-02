@@ -13,6 +13,7 @@ import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
@@ -38,6 +39,7 @@ class PahoMqttClientAdapterIT {
                     MountableFile.forClasspathResource("mosquitto/mosquitto.conf"),
                     "/mosquitto/config/mosquitto.conf")
             .withExposedPorts(1883)
+            .waitingFor(Wait.forLogMessage("(?s).*mosquitto version .* running.*", 1))
             .withStartupTimeout(Duration.ofSeconds(30));
 
     private PahoMqttClientAdapter adapter;
@@ -85,6 +87,7 @@ class PahoMqttClientAdapterIT {
 
         String topic = "devices/" + UUID.randomUUID() + "/status";
         adapter.subscribe("devices/+/status", 1);
+        waitForBrokerProcessing();
         publishWithRawClient(topic, "hello".getBytes(StandardCharsets.UTF_8), 1, false);
 
         assertTrue(messageLatch.await(5, TimeUnit.SECONDS));
@@ -99,6 +102,12 @@ class PahoMqttClientAdapterIT {
         CountDownLatch messageLatch = new CountDownLatch(1);
         AtomicReference<MqttMessage> receivedMessage = new AtomicReference<>();
         String topic = "devices/" + UUID.randomUUID() + "/command";
+
+        adapter = new PahoMqttClientAdapter(createDefinition("publish-test"), (brokerId, arrivedTopic, payload, headers) -> {
+        });
+        adapter.connect();
+        adapter.publish(topic, "payload", 1, true);
+        waitForBrokerProcessing();
 
         try (MqttClient subscriber = newRawClient("subscriber-" + UUID.randomUUID())) {
             subscriber.setCallback(new MqttCallback() {
@@ -120,11 +129,6 @@ class PahoMqttClientAdapterIT {
             });
             subscriber.connect(connectOptions());
             subscriber.subscribe(topic, 1);
-
-            adapter = new PahoMqttClientAdapter(createDefinition("publish-test"), (brokerId, arrivedTopic, payload, headers) -> {
-            });
-            adapter.connect();
-            adapter.publish(topic, "payload", 1, true);
 
             assertTrue(messageLatch.await(5, TimeUnit.SECONDS));
             assertEquals(1, receivedMessage.get().getQos());
@@ -167,10 +171,20 @@ class PahoMqttClientAdapterIT {
         MqttConnectOptions options = new MqttConnectOptions();
         options.setConnectionTimeout(10);
         options.setKeepAliveInterval(30);
+        options.setCleanSession(true);
         return options;
     }
 
     private String serverUri() {
         return "tcp://" + MOSQUITTO.getHost() + ":" + MOSQUITTO.getMappedPort(1883);
+    }
+
+    private void waitForBrokerProcessing() {
+        try {
+            Thread.sleep(250);
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Interrupted while waiting for broker processing", ex);
+        }
     }
 }
