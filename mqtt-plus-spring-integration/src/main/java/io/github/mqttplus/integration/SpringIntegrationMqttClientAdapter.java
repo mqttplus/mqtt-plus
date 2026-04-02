@@ -199,7 +199,7 @@ public final class SpringIntegrationMqttClientAdapter implements MqttClientAdapt
         options.setConnectionTimeout(brokerDefinition.getConnectionTimeout());
         options.setKeepAliveInterval(brokerDefinition.getKeepAliveInterval());
         options.setCleanSession(brokerDefinition.isCleanSession());
-        options.setAutomaticReconnect(false);
+        options.setAutomaticReconnect(true);
         clientFactory.setConnectionOptions(options);
         return clientFactory;
     }
@@ -210,6 +210,7 @@ public final class SpringIntegrationMqttClientAdapter implements MqttClientAdapt
         MqttPahoMessageDrivenChannelAdapter adapter =
                 new MqttPahoMessageDrivenChannelAdapter(serverUri, brokerDefinition.getClientId(), clientFactory);
         adapter.setCompletionTimeout(5000);
+        adapter.setRecoveryInterval(2000);
         return adapter;
     }
 
