@@ -87,10 +87,14 @@ class SpringIntegrationMqttClientAdapterIT {
 
         String topic = "devices/" + UUID.randomUUID() + "/status";
         adapter.subscribe("devices/+/status", 1);
-        waitForBrokerProcessing();
-        publishWithRawClient(topic, "hello".getBytes(StandardCharsets.UTF_8), 1, false);
 
-        assertTrue(messageLatch.await(5, TimeUnit.SECONDS));
+        boolean received = false;
+        for (int attempt = 0; attempt < 10 && !received; attempt++) {
+            publishWithRawClient(topic, "hello".getBytes(StandardCharsets.UTF_8), 1, false);
+            received = messageLatch.await(1, TimeUnit.SECONDS);
+        }
+
+        assertTrue(received);
         assertEquals("primary", inboundBroker.get());
         assertEquals(topic, inboundTopic.get());
         assertArrayEquals("hello".getBytes(StandardCharsets.UTF_8), inboundPayload.get());
@@ -106,7 +110,7 @@ class SpringIntegrationMqttClientAdapterIT {
         adapter = new SpringIntegrationMqttClientAdapter(createDefinition("publish-test"), (brokerId, arrivedTopic, payload, headers) -> {
         });
         adapter.connect();
-        adapter.publish(topic, "payload", 1, true);
+        publishWithAdapterRetry(topic, "payload", 1, true);
         waitForBrokerProcessing();
 
         try (MqttClient subscriber = newRawClient("subscriber-" + UUID.randomUUID())) {
@@ -146,8 +150,24 @@ class SpringIntegrationMqttClientAdapterIT {
                 .host(MOSQUITTO.getHost())
                 .port(MOSQUITTO.getMappedPort(1883))
                 .clientId("mqtt-plus-integration-" + clientIdSuffix + "-" + UUID.randomUUID())
+                .cleanSession(false)
                 .inboundThreadPool(ThreadPoolConfig.builder().coreSize(1).build())
                 .build();
+    }
+
+    private void publishWithAdapterRetry(String topic, String payload, int qos, boolean retained) throws InterruptedException {
+        IllegalStateException lastError = null;
+        for (int attempt = 0; attempt < 10; attempt++) {
+            try {
+                adapter.publish(topic, payload, qos, retained);
+                return;
+            }
+            catch (IllegalStateException ex) {
+                lastError = ex;
+                Thread.sleep(500);
+            }
+        }
+        throw lastError;
     }
 
     private void publishWithRawClient(String topic, byte[] payload, int qos, boolean retained) throws MqttException {

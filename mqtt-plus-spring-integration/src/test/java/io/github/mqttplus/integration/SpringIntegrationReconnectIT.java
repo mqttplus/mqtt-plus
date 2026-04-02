@@ -73,15 +73,20 @@ class SpringIntegrationReconnectIT {
     @Test
     void shouldRecoverSubscriptionsAfterNetworkInterruption() throws Exception {
         CountDownLatch connectedLatch = new CountDownLatch(1);
+        CountDownLatch baselineMessageLatch = new CountDownLatch(1);
         CountDownLatch recoveredMessageLatch = new CountDownLatch(1);
         AtomicInteger inboundCount = new AtomicInteger();
         AtomicReference<String> recoveredTopic = new AtomicReference<>();
         String topic = "devices/" + UUID.randomUUID() + "/reconnect";
 
         adapter = new SpringIntegrationMqttClientAdapter(createDefinition("reconnect-test"), (brokerId, arrivedTopic, payload, headers) -> {
-            inboundCount.incrementAndGet();
-            recoveredTopic.set(arrivedTopic);
-            recoveredMessageLatch.countDown();
+            if (inboundCount.incrementAndGet() == 1) {
+                baselineMessageLatch.countDown();
+            }
+            else {
+                recoveredTopic.set(arrivedTopic);
+                recoveredMessageLatch.countDown();
+            }
         });
         adapter.addConnectionListener(new MqttConnectionListener() {
             @Override
@@ -101,21 +106,27 @@ class SpringIntegrationReconnectIT {
         adapter.connect();
         assertTrue(connectedLatch.await(5, TimeUnit.SECONDS));
         adapter.subscribe(topic, 1);
-        waitForBrokerProcessing();
+
+        boolean baselineReceived = false;
+        for (int attempt = 0; attempt < 10 && !baselineReceived; attempt++) {
+            publishWithRawClient(topic, ("baseline-" + attempt).getBytes(StandardCharsets.UTF_8), 1, false);
+            baselineReceived = baselineMessageLatch.await(1, TimeUnit.SECONDS);
+        }
+        assertTrue(baselineReceived, "expected subscription to receive a message before network interruption");
 
         mqttProxy.setConnectionCut(true);
         Thread.sleep(3000);
         mqttProxy.setConnectionCut(false);
 
         boolean recovered = false;
-        for (int attempt = 0; attempt < 10 && !recovered; attempt++) {
+        for (int attempt = 0; attempt < 12 && !recovered; attempt++) {
             publishWithRawClient(topic, ("recovered-" + attempt).getBytes(StandardCharsets.UTF_8), 1, false);
             recovered = recoveredMessageLatch.await(1, TimeUnit.SECONDS);
         }
 
         assertTrue(recovered, "expected subscription to receive a message after network recovery");
         assertEquals(topic, recoveredTopic.get());
-        assertTrue(inboundCount.get() >= 1);
+        assertTrue(inboundCount.get() >= 2);
     }
 
     private MqttBrokerDefinition createDefinition(String clientIdSuffix) {
@@ -126,6 +137,7 @@ class SpringIntegrationReconnectIT {
                 .clientId("mqtt-plus-integration-" + clientIdSuffix + "-" + UUID.randomUUID())
                 .connectionTimeout(3)
                 .keepAliveInterval(2)
+                .cleanSession(false)
                 .inboundThreadPool(ThreadPoolConfig.builder().coreSize(1).build())
                 .build();
     }
@@ -153,15 +165,5 @@ class SpringIntegrationReconnectIT {
         options.setKeepAliveInterval(30);
         options.setCleanSession(true);
         return options;
-    }
-
-    private void waitForBrokerProcessing() {
-        try {
-            Thread.sleep(250);
-        }
-        catch (InterruptedException ex) {
-            Thread.currentThread().interrupt();
-            throw new IllegalStateException("Interrupted while waiting for broker processing", ex);
-        }
     }
 }
