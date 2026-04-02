@@ -8,8 +8,8 @@ Thanks for contributing to `mqtt-plus`.
 2. Run local checks before committing:
 
 ```bash
-mvn test
-mvn -pl mqtt-plus-samples/sample-basic,mqtt-plus-samples/sample-multi-broker,mqtt-plus-samples/sample-dynamic-subscription -am -DskipTests compile
+mvn -B test
+mvn -B -Pintegration-test verify
 ```
 
 3. Keep changes scoped to one logical concern when possible.
@@ -19,4 +19,5 @@ mvn -pl mqtt-plus-samples/sample-basic,mqtt-plus-samples/sample-multi-broker,mqt
 
 - Java version: 17
 - Current adapter in `v1.0.0`: Paho (MQTT 3.1.1)
-- `mqtt-plus-test` provides fast router-level test helpers and Spring test wiring
+- `mqtt-plus-test` provides router-level fast tests and embedded-broker Spring test support
+- The three sample applications are expected to pass their smoke tests as part of release readiness

@@ -20,7 +20,7 @@
 
 ### Why mqtt-plus?
 
-Using MQTT in Spring Boot often means wiring channels, adapters, and handlers for even simple topic consumption. `mqtt-plus` aims to provide a cleaner model centered on annotations, explicit broker publishing, and subscription recovery.
+Using MQTT in Spring Boot often means wiring channels, adapters, and handlers for even simple topic consumption. `mqtt-plus` provides a cleaner model centered on annotations, explicit broker publishing, dynamic subscriptions, and reconnect recovery.
 
 ```java
 @MqttListener(broker = "cloud", topics = "drone/+/status", payloadType = String.class)
@@ -40,11 +40,12 @@ This README reflects the currently implemented and reviewed `v1.0.0` scope:
 
 - `@MqttListener`: annotation-driven listener registration with MQTT wildcard support (`+`, `#`)
 - Multi-broker: connect to multiple MQTT brokers in one application
-- Dynamic subscriptions: add or remove topics at runtime
+- Dynamic subscriptions: add or remove topics at runtime and apply changes immediately to active adapters
 - Reconnect recovery: restore static and dynamic subscriptions after reconnect
-- `MqttTemplate`: explicit-broker publish API with sync and async variants
+- `MqttTemplate`: explicit-broker publish API with sync and async variants, including `qos` and `retained`
 - Interceptor chain: `beforeHandle` / `afterHandle` / `onError`
 - Spring Boot first, non-Spring capable: core abstractions remain usable outside Spring
+- Test helpers: router-level fast tests and embedded-broker Spring test support
 
 ### Quick Start
 
@@ -156,8 +157,25 @@ publisher.publishEvent(new MqttSubscriptionRefreshEvent(
 ));
 ```
 
-`v1.0.0` supports dynamic topic subscription updates.  
+`v1.0.0` supports dynamic topic subscription updates and applies subscription refresh events immediately to active adapters.
 It does not support changing broker connection details such as host, port, username, password, or clientId at runtime.
+
+### Testing
+
+`mqtt-plus-test` supports two complementary testing styles:
+
+- `MqttTestTemplate.simulateIncoming(...)` for fast router-level tests
+- `@EnableMqttPlusTest` for Spring tests backed by an embedded MQTT broker
+
+### Samples
+
+The repository includes three sample applications:
+
+- `sample-basic`
+- `sample-multi-broker`
+- `sample-dynamic-subscription`
+
+All three samples are covered by smoke tests in CI so the release checklist includes an executable verification step, not only compilation.
 
 ### Modules
 
@@ -167,7 +185,7 @@ It does not support changing broker connection details such as host, port, usern
 | `mqtt-plus-paho` | Eclipse Paho v1 adapter for MQTT 3.1.1 |
 | `mqtt-plus-spring` | Spring integration for annotation scanning, method resolution, and event bridging |
 | `mqtt-plus-spring-boot-starter` | Auto-configuration, YAML binding, and default converter setup |
-| `mqtt-plus-test` | Test helpers for router-level testing and Spring test wiring |
+| `mqtt-plus-test` | Test helpers for router-level tests and embedded-broker Spring test wiring |
 
 ### Comparison
 
@@ -176,7 +194,7 @@ It does not support changing broker connection details such as host, port, usern
 | Annotation-driven listeners | ✅ | ❌ | ❌ |
 | Multi-broker | ✅ | ⚠️ | ❌ |
 | Dynamic subscriptions | ✅ | ⚠️ | ⚠️ |
-| MQTT 5.0 | ✅ | ❌ | ⚠️ |
+| MQTT 5.0 | ⚠️ | ❌ | ⚠️ |
 | Spring Boot Starter | ✅ | ❌ | ❌ |
 | Non-Spring usage | ✅ | ❌ | ✅ |
 | Interceptor chain | ✅ | ❌ | ❌ |
@@ -204,9 +222,9 @@ Apache 2.0
 
 ## 中文
 
-### 为什么是 mqtt-plus？
+### 为什么选择 mqtt-plus？
 
-在 Spring Boot 中使用 MQTT，哪怕只是做一个简单的 topic 监听，往往也要手动组装 channel、adapter 和 handler。`mqtt-plus` 希望把这些样板配置收敛起来，提供一套以注解、显式 broker 发布和订阅恢复为中心的开发模型。
+在 Spring Boot 中使用 MQTT，即使只是监听一个简单的 topic，通常也需要自己组装 channel、adapter 和 handler。`mqtt-plus` 希望把这些样板代码收敛起来，提供一套以注解、显式 broker 发布、动态订阅和重连恢复为中心的开发模型。
 
 ```java
 @MqttListener(broker = "cloud", topics = "drone/+/status", payloadType = String.class)
@@ -217,7 +235,7 @@ public void onStatus(String payload) {
 
 ### 当前范围
 
-本 README 对应当前已经实现并评审收敛的 `v1.0.0` 范围：
+本 README 对应当前已经实现并完成评审收敛的 `v1.0.0` 范围：
 
 - 已包含：`mqtt-plus-core`、`mqtt-plus-paho`、`mqtt-plus-spring`、`mqtt-plus-spring-boot-starter`、`mqtt-plus-test`
 - 暂缓：`mqtt-plus-hivemq`、MQTT 5.0 支持、运行时动态修改 broker 连接信息
@@ -226,11 +244,12 @@ public void onStatus(String payload) {
 
 - `@MqttListener`：注解驱动的监听注册，支持 MQTT 通配符（`+`、`#`）
 - 多 broker：一个应用可以同时连接多个 MQTT broker
-- 动态订阅：支持在运行时增加或移除 topic
+- 动态订阅：支持运行时增删 topic，并且会立即同步到当前活跃连接
 - 重连恢复：连接恢复后自动恢复静态和动态订阅
-- `MqttTemplate`：显式指定 broker 的同步/异步发布 API
+- `MqttTemplate`：显式指定 broker 的同步/异步发布 API，支持 `qos` 和 `retained`
 - 拦截器链：支持 `beforeHandle` / `afterHandle` / `onError`
 - 以 Spring Boot 为主，同时保留非 Spring 使用能力
+- 测试支持：同时提供 router 级快测和 embedded broker 测试能力
 
 ### 快速开始
 
@@ -255,9 +274,9 @@ public void onStatus(String payload) {
 **JSON 负载说明**
 
 - `mqtt-plus` 默认始终支持 `String` 和 `byte[]` 负载
-- 如果要把消息直接反序列化为 POJO，需要提供 JSON `PayloadConverter`
+- 如果要把消息直接反序列化成 POJO，需要提供 JSON `PayloadConverter`
 - 当类路径中存在 `jackson-databind` 时，starter 会自动启用基于 Jackson 的 converter
-- 如果你更希望使用其他 JSON 框架，也可以自己注册 `PayloadConverter` Bean
+- 如果你希望使用其他 JSON 框架，也可以自己注册 `PayloadConverter` Bean
 - `jackson-databind` 是可选依赖，简单应用如果不做 JSON 对象反序列化，可以不引入
 
 **2. 配置 broker**
@@ -342,8 +361,25 @@ publisher.publishEvent(new MqttSubscriptionRefreshEvent(
 ));
 ```
 
-`v1.0.0` 支持动态增删 topic。  
+`v1.0.0` 支持动态增删 topic，并且会立即把订阅刷新事件应用到当前活跃 adapter。
 但暂不支持在运行时动态修改 broker 的 host、port、username、password 或 clientId。
+
+### 测试
+
+`mqtt-plus-test` 目前支持两种互补的测试方式：
+
+- `MqttTestTemplate.simulateIncoming(...)`：router 级快速测试
+- `@EnableMqttPlusTest`：基于 embedded MQTT broker 的 Spring 集成测试
+
+### 示例工程
+
+仓库当前包含 3 个示例：
+
+- `sample-basic`
+- `sample-multi-broker`
+- `sample-dynamic-subscription`
+
+这 3 个 sample 现在都已经接入 CI smoke test，所以发布检查里已经包含“可启动验证”，而不只是“能编译通过”。
 
 ### 模块说明
 
@@ -353,7 +389,7 @@ publisher.publishEvent(new MqttSubscriptionRefreshEvent(
 | `mqtt-plus-paho` | 基于 Eclipse Paho v1 的 MQTT 3.1.1 适配器 |
 | `mqtt-plus-spring` | Spring 注解扫描、方法参数解析和事件桥接 |
 | `mqtt-plus-spring-boot-starter` | 自动配置、YAML 绑定和默认 converter 装配 |
-| `mqtt-plus-test` | 用于 router 级测试和 Spring 测试装配的辅助模块 |
+| `mqtt-plus-test` | 用于 router 快测和 embedded broker Spring 测试装配的辅助模块 |
 
 ### 对比
 
@@ -362,7 +398,7 @@ publisher.publishEvent(new MqttSubscriptionRefreshEvent(
 | Annotation-driven listeners | ✅ | ❌ | ❌ |
 | Multi-broker | ✅ | ⚠️ | ❌ |
 | Dynamic subscriptions | ✅ | ⚠️ | ⚠️ |
-| MQTT 5.0 | ✅ | ❌ | ⚠️ |
+| MQTT 5.0 | ⚠️ | ❌ | ⚠️ |
 | Spring Boot Starter | ✅ | ❌ | ❌ |
 | Non-Spring usage | ✅ | ❌ | ✅ |
 | Interceptor chain | ✅ | ❌ | ❌ |
@@ -372,7 +408,7 @@ publisher.publishEvent(new MqttSubscriptionRefreshEvent(
 ### 说明
 
 - `MqttTemplate` 发布时必须显式指定 broker id
-- `MqttTestTemplate.simulateIncoming(...)` 是 router 级快速测试工具，不是完整的 MQTT 协议仿真
+- `MqttTestTemplate.simulateIncoming(...)` 是 router 级快速测试工具，不是完整 MQTT 协议仿真
 - 运行时动态更新 broker 连接参数不在 `v1.0.0` 范围内
 
 ### 运行要求
