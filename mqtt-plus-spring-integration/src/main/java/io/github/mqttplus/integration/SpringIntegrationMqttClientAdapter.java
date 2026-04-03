@@ -6,6 +6,7 @@ import io.github.mqttplus.core.adapter.MqttInboundMessageSink;
 import io.github.mqttplus.core.model.MqttBrokerDefinition;
 import io.github.mqttplus.core.model.MqttHeaders;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.mqtt.core.DefaultMqttPahoClientFactory;
 import org.springframework.integration.mqtt.inbound.MqttPahoMessageDrivenChannelAdapter;
@@ -67,6 +68,8 @@ public final class SpringIntegrationMqttClientAdapter implements MqttClientAdapt
         DirectChannel inboundChannel = new DirectChannel();
         inboundChannel.subscribe(this::handleInboundMessage);
         this.inboundAdapter.setOutputChannel(inboundChannel);
+        initializeComponent(this.inboundAdapter, "inbound adapter");
+        initializeComponent(this.outboundHandler, "outbound handler");
     }
 
     @Override
@@ -184,6 +187,17 @@ public final class SpringIntegrationMqttClientAdapter implements MqttClientAdapt
         Object value = message.getHeaders().get(sourceHeader);
         if (value != null) {
             target.put(targetHeader, value);
+        }
+    }
+
+    private static void initializeComponent(Object component, String name) {
+        if (component instanceof InitializingBean initializingBean) {
+            try {
+                initializingBean.afterPropertiesSet();
+            }
+            catch (Exception ex) {
+                throw new IllegalStateException("Failed to initialize " + name, ex);
+            }
         }
     }
 
