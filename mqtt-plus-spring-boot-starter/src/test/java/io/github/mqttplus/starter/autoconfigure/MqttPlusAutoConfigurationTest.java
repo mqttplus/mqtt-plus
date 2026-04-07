@@ -74,10 +74,10 @@ class MqttPlusAutoConfigurationTest {
                 registry,
                 (brokerId, topic, payload, headers) -> {
                 },
-                configuration.mqttSubscriptionReconciler(
+                List.of(configuration.mqttSubscriptionReconciler(
                         registry,
                         configuration.mqttListenerRegistry(),
-                        configuration.mqttSubscriptionManager()));
+                        configuration.mqttSubscriptionManager())));
 
         assertNotNull(registry.find("primary").orElse(null));
         assertTrue(stubFactory.lastAdapter.connected);

@@ -5,6 +5,7 @@ import io.github.mqttplus.core.MqttTemplate;
 import io.github.mqttplus.core.adapter.DefaultMqttClientAdapterRegistry;
 import io.github.mqttplus.core.adapter.MqttClientAdapterFactory;
 import io.github.mqttplus.core.adapter.MqttClientAdapterRegistry;
+import io.github.mqttplus.core.adapter.MqttConnectionListener;
 import io.github.mqttplus.core.converter.PayloadConverter;
 import io.github.mqttplus.core.converter.PayloadSerializer;
 import io.github.mqttplus.core.error.DefaultErrorHandlingStrategy;
@@ -219,13 +220,13 @@ public class MqttPlusAutoConfiguration {
                                                        MqttClientAdapterFactoryRegistry factoryRegistry,
                                                        MqttClientAdapterRegistry adapterRegistry,
                                                        MqttMessageRouter mqttMessageRouter,
-                                                       MqttSubscriptionReconciler subscriptionReconciler) {
+                                                       List<MqttConnectionListener> connectionListeners) {
         return () -> new MqttBrokerAutoConfiguration().registerAdapters(
                 properties,
                 factoryRegistry,
                 adapterRegistry,
                 mqttMessageRouter::route,
-                subscriptionReconciler);
+                connectionListeners);
     }
 
     private void addJacksonPayloadConverterIfAvailable(List<PayloadConverter> converters, ListableBeanFactory beanFactory) {

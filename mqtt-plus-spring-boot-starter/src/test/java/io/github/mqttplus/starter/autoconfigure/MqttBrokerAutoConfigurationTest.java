@@ -9,6 +9,7 @@ import io.github.mqttplus.core.model.MqttBrokerDefinition;
 import io.github.mqttplus.starter.properties.MqttPlusProperties;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -31,10 +32,28 @@ class MqttBrokerAutoConfigurationTest {
                 factoryRegistry,
                 adapterRegistry,
                 (brokerId, topic, payload, headers) -> { },
-                new NoOpConnectionListener());
+                List.of(new NoOpConnectionListener()));
 
         assertTrue(adapter.connected);
         assertTrue(adapterRegistry.find("primary").isPresent());
+    }
+
+    @Test
+    void shouldRegisterAllConnectionListeners() {
+        MqttPlusProperties properties = createProperties();
+        StubAdapter adapter = new StubAdapter(properties.getBrokers().get("primary").toDefinition("primary"), false);
+        MqttClientAdapterFactoryRegistry factoryRegistry = new MqttClientAdapterFactoryRegistry(List.of(new StubFactory(adapter)));
+        DefaultMqttClientAdapterRegistry adapterRegistry = new DefaultMqttClientAdapterRegistry();
+        List<MqttConnectionListener> listeners = List.of(new NoOpConnectionListener(), new NoOpConnectionListener());
+
+        new MqttBrokerAutoConfiguration().registerAdapters(
+                properties,
+                factoryRegistry,
+                adapterRegistry,
+                (brokerId, topic, payload, headers) -> { },
+                listeners);
+
+        assertEquals(2, adapter.connectionListeners.size());
     }
 
     @Test
@@ -50,7 +69,7 @@ class MqttBrokerAutoConfigurationTest {
                         factoryRegistry,
                         adapterRegistry,
                         (brokerId, topic, payload, headers) -> { },
-                        new NoOpConnectionListener()));
+                        List.of(new NoOpConnectionListener())));
 
         assertEquals("connect failed", exception.getMessage());
         assertFalse(adapterRegistry.find("primary").isPresent());
@@ -92,6 +111,7 @@ class MqttBrokerAutoConfigurationTest {
     private static final class StubAdapter implements MqttClientAdapter {
         private final MqttBrokerDefinition brokerDefinition;
         private final boolean failOnConnect;
+        private final List<MqttConnectionListener> connectionListeners = new ArrayList<>();
         private boolean connected;
 
         private StubAdapter(MqttBrokerDefinition brokerDefinition, boolean failOnConnect) {
@@ -156,6 +176,7 @@ class MqttBrokerAutoConfigurationTest {
 
         @Override
         public void addConnectionListener(MqttConnectionListener listener) {
+            connectionListeners.add(listener);
         }
     }
 

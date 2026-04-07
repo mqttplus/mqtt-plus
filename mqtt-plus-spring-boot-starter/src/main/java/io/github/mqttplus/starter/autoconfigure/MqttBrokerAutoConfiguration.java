@@ -8,6 +8,7 @@ import io.github.mqttplus.core.adapter.MqttInboundMessageSink;
 import io.github.mqttplus.core.model.MqttBrokerDefinition;
 import io.github.mqttplus.starter.properties.MqttPlusProperties;
 
+import java.util.List;
 import java.util.Map;
 
 public class MqttBrokerAutoConfiguration {
@@ -16,7 +17,7 @@ public class MqttBrokerAutoConfiguration {
                                  MqttClientAdapterFactoryRegistry factoryRegistry,
                                  MqttClientAdapterRegistry adapterRegistry,
                                  MqttInboundMessageSink inboundMessageSink,
-                                 MqttConnectionListener connectionListener) {
+                                 List<MqttConnectionListener> connectionListeners) {
         for (Map.Entry<String, MqttPlusProperties.BrokerProperties> entry : properties.getBrokers().entrySet()) {
             String brokerId = entry.getKey();
             MqttPlusProperties.BrokerProperties brokerProperties = entry.getValue();
@@ -25,11 +26,14 @@ public class MqttBrokerAutoConfiguration {
                     brokerProperties.getAdapter(),
                     brokerProperties.getMqttVersion());
             MqttClientAdapter adapter = factory.create(definition, inboundMessageSink);
-            adapter.addConnectionListener(connectionListener);
+            for (MqttConnectionListener connectionListener : connectionListeners) {
+                adapter.addConnectionListener(connectionListener);
+            }
             adapterRegistry.register(adapter);
             try {
                 adapter.connect();
-            } catch (RuntimeException ex) {
+            }
+            catch (RuntimeException ex) {
                 adapterRegistry.remove(brokerId);
                 throw ex;
             }
