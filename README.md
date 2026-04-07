@@ -71,10 +71,11 @@ If you prefer the raw Paho transport instead, replace the second dependency with
 
 **JSON payload note**
 
-- `String` and `byte[]` payloads work out of the box
-- POJO payload binding requires a JSON `PayloadConverter`
-- When `jackson-databind` is on the classpath, the starter auto-enables a Jackson converter
-- You can register a custom `PayloadConverter` for another JSON framework
+- `String` payloads are sent as UTF-8 bytes
+- `byte[]` payloads are sent as-is
+- POJO payloads are serialized through the publish-side `PayloadSerializer` chain
+- When `jackson-databind` is on the classpath, the starter auto-enables a Jackson serializer so POJOs are published as JSON bytes by default
+- You can register a custom `PayloadSerializer` for another JSON framework or a custom wire format
 
 **2. Configure brokers**
 
@@ -264,10 +265,11 @@ public void onStatus(String payload) {
 
 **JSON 负载说明**
 
-- 默认始终支持 `String` 和 `byte[]`
-- 如果要把消息直接反序列化成 POJO，需要 JSON `PayloadConverter`
-- 当类路径里存在 `jackson-databind` 时，starter 会自动启用 Jackson converter
-- 如果你使用其他 JSON 框架，可以注册自己的 `PayloadConverter`
+- `String` 默认按 UTF-8 bytes 发送
+- `byte[]` 会原样发送
+- Java POJO 会经过发送侧 `PayloadSerializer` 链进行序列化
+- 当类路径里存在 `jackson-databind` 时，starter 会自动启用 Jackson serializer，因此 POJO 默认会按 JSON bytes 发布
+- 如果你使用其他 JSON 框架或自定义线协议，可以注册自己的 `PayloadSerializer`
 
 **2. 配置 broker**
 
