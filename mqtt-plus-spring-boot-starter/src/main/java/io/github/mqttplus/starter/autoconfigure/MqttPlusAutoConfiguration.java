@@ -6,6 +6,7 @@ import io.github.mqttplus.core.adapter.DefaultMqttClientAdapterRegistry;
 import io.github.mqttplus.core.adapter.MqttClientAdapterFactory;
 import io.github.mqttplus.core.adapter.MqttClientAdapterRegistry;
 import io.github.mqttplus.core.converter.PayloadConverter;
+import io.github.mqttplus.core.converter.PayloadSerializer;
 import io.github.mqttplus.core.error.DefaultErrorHandlingStrategy;
 import io.github.mqttplus.core.error.ErrorActionAggregator;
 import io.github.mqttplus.core.interceptor.MqttMessageInterceptor;
@@ -21,10 +22,14 @@ import io.github.mqttplus.spring.MqttListenerAnnotationProcessor;
 import io.github.mqttplus.spring.event.MqttSubscriptionRefreshEventListener;
 import io.github.mqttplus.spring.invocation.MqttListenerMethodArgumentResolver;
 import io.github.mqttplus.starter.converter.ByteArrayPayloadConverter;
+import io.github.mqttplus.starter.converter.ByteArrayPayloadSerializer;
 import io.github.mqttplus.starter.converter.StringPayloadConverter;
+import io.github.mqttplus.starter.converter.StringPayloadSerializer;
 import io.github.mqttplus.starter.properties.MqttPlusProperties;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.ListableBeanFactory;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -33,7 +38,9 @@ import org.springframework.context.annotation.Bean;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 @AutoConfiguration
 @EnableConfigurationProperties(MqttPlusProperties.class)
@@ -41,8 +48,12 @@ public class MqttPlusAutoConfiguration {
 
     private static final String OBJECT_MAPPER_CLASS_NAME = "com.fasterxml.jackson.databind.ObjectMapper";
     private static final String JACKSON_CONVERTER_CLASS_NAME = "io.github.mqttplus.starter.converter.JacksonPayloadConverter";
+    private static final String JACKSON_SERIALIZER_CLASS_NAME = "io.github.mqttplus.starter.converter.JacksonPayloadSerializer";
     private static final String PAHO_FACTORY_CLASS_NAME = "io.github.mqttplus.paho.PahoMqttClientAdapterFactory";
     private static final String SPRING_INTEGRATION_FACTORY_CLASS_NAME = "io.github.mqttplus.integration.SpringIntegrationMqttClientAdapterFactory";
+    private static final String BYTE_ARRAY_SERIALIZER_BEAN_NAME = "byteArrayPayloadSerializer";
+    private static final String STRING_SERIALIZER_BEAN_NAME = "stringPayloadSerializer";
+    private static final String JACKSON_SERIALIZER_BEAN_NAME = "jacksonPayloadSerializer";
 
     @Bean
     @ConditionalOnMissingBean
@@ -90,6 +101,48 @@ public class MqttPlusAutoConfiguration {
         return converters;
     }
 
+    @Bean(name = BYTE_ARRAY_SERIALIZER_BEAN_NAME)
+    @ConditionalOnMissingBean(name = BYTE_ARRAY_SERIALIZER_BEAN_NAME)
+    public PayloadSerializer byteArrayPayloadSerializer() {
+        return new ByteArrayPayloadSerializer();
+    }
+
+    @Bean(name = STRING_SERIALIZER_BEAN_NAME)
+    @ConditionalOnMissingBean(name = STRING_SERIALIZER_BEAN_NAME)
+    public PayloadSerializer stringPayloadSerializer() {
+        return new StringPayloadSerializer();
+    }
+
+    @Bean(name = JACKSON_SERIALIZER_BEAN_NAME)
+    @ConditionalOnMissingBean(name = JACKSON_SERIALIZER_BEAN_NAME)
+    @ConditionalOnClass(name = OBJECT_MAPPER_CLASS_NAME)
+    public PayloadSerializer jacksonPayloadSerializer(ListableBeanFactory beanFactory) {
+        return instantiateJacksonPayloadSerializer(beanFactory);
+    }
+
+    @Bean(name = "mqttPlusPayloadSerializerChain")
+    @ConditionalOnMissingBean(name = "mqttPlusPayloadSerializerChain")
+    public List<PayloadSerializer> payloadSerializerChain(
+            ListableBeanFactory beanFactory,
+            @Qualifier(BYTE_ARRAY_SERIALIZER_BEAN_NAME) PayloadSerializer byteArraySerializer,
+            @Qualifier(STRING_SERIALIZER_BEAN_NAME) PayloadSerializer stringSerializer,
+            @Qualifier(JACKSON_SERIALIZER_BEAN_NAME) ObjectProvider<PayloadSerializer> jacksonSerializerProvider) {
+        List<PayloadSerializer> serializers = new ArrayList<>();
+        Map<String, PayloadSerializer> allSerializers = beanFactory.getBeansOfType(PayloadSerializer.class);
+        allSerializers.entrySet().stream()
+                .filter(entry -> !isBuiltInSerializerBean(entry.getKey()))
+                .sorted(Map.Entry.comparingByKey(Comparator.naturalOrder()))
+                .map(Map.Entry::getValue)
+                .forEach(serializers::add);
+        serializers.add(byteArraySerializer);
+        serializers.add(stringSerializer);
+        PayloadSerializer jacksonSerializer = jacksonSerializerProvider.getIfAvailable();
+        if (jacksonSerializer != null) {
+            serializers.add(jacksonSerializer);
+        }
+        return List.copyOf(serializers);
+    }
+
     @Bean(name = "mqttMessageInterceptors")
     @ConditionalOnMissingBean(name = "mqttMessageInterceptors")
     public List<MqttMessageInterceptor> mqttMessageInterceptors() {
@@ -109,8 +162,9 @@ public class MqttPlusAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public MqttTemplate mqttTemplate(MqttClientAdapterRegistry registry) {
-        return new DefaultMqttTemplate(registry);
+    public MqttTemplate mqttTemplate(MqttClientAdapterRegistry registry,
+                                     @Qualifier("mqttPlusPayloadSerializerChain") List<PayloadSerializer> payloadSerializers) {
+        return new DefaultMqttTemplate(registry, payloadSerializers);
     }
 
     @Bean
@@ -193,6 +247,32 @@ public class MqttPlusAutoConfiguration {
         catch (ReflectiveOperationException ex) {
             throw new IllegalStateException("Failed to initialize optional Jackson payload converter", ex);
         }
+    }
+
+    private PayloadSerializer instantiateJacksonPayloadSerializer(ListableBeanFactory beanFactory) {
+        try {
+            ClassLoader classLoader = resolveApplicationClassLoader();
+            Class<?> objectMapperClass = Class.forName(OBJECT_MAPPER_CLASS_NAME, false, classLoader);
+            Object objectMapper = beanFactory.getBeanProvider(objectMapperClass).getIfAvailable();
+            if (objectMapper == null) {
+                objectMapper = objectMapperClass.getDeclaredConstructor().newInstance();
+            }
+            Class<?> serializerClass = Class.forName(JACKSON_SERIALIZER_CLASS_NAME, false, classLoader);
+            Constructor<?> constructor = serializerClass.getConstructor(objectMapperClass);
+            return (PayloadSerializer) constructor.newInstance(objectMapper);
+        }
+        catch (ClassNotFoundException ex) {
+            throw new IllegalStateException("Jackson payload serializer class is not available", ex);
+        }
+        catch (ReflectiveOperationException ex) {
+            throw new IllegalStateException("Failed to initialize optional Jackson payload serializer", ex);
+        }
+    }
+
+    private boolean isBuiltInSerializerBean(String beanName) {
+        return BYTE_ARRAY_SERIALIZER_BEAN_NAME.equals(beanName)
+                || STRING_SERIALIZER_BEAN_NAME.equals(beanName)
+                || JACKSON_SERIALIZER_BEAN_NAME.equals(beanName);
     }
 
     private MqttClientAdapterFactory instantiateFactory(String factoryClassName) {

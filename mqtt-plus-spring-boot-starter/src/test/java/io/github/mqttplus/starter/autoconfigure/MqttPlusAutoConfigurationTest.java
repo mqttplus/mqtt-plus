@@ -5,6 +5,7 @@ import io.github.mqttplus.core.adapter.MqttClientAdapter;
 import io.github.mqttplus.core.adapter.MqttClientAdapterFactory;
 import io.github.mqttplus.core.adapter.MqttConnectionListener;
 import io.github.mqttplus.core.adapter.MqttInboundMessageSink;
+import io.github.mqttplus.core.converter.PayloadSerializer;
 import io.github.mqttplus.core.model.MqttBrokerDefinition;
 import io.github.mqttplus.core.router.MqttMessageRouter;
 import io.github.mqttplus.starter.properties.MqttPlusProperties;
@@ -39,7 +40,12 @@ class MqttPlusAutoConfigurationTest {
                 configuration.errorActionAggregator(),
                 configuration.payloadConverters(beanFactory),
                 configuration.mqttMessageInterceptors());
-        MqttTemplate template = configuration.mqttTemplate(configuration.mqttClientAdapterRegistry());
+        List<PayloadSerializer> payloadSerializers = configuration.payloadSerializerChain(
+                beanFactory,
+                configuration.byteArrayPayloadSerializer(),
+                configuration.stringPayloadSerializer(),
+                new StaticListableBeanFactory().getBeanProvider(PayloadSerializer.class));
+        MqttTemplate template = configuration.mqttTemplate(configuration.mqttClientAdapterRegistry(), payloadSerializers);
 
         assertNotNull(router);
         assertNotNull(template);
