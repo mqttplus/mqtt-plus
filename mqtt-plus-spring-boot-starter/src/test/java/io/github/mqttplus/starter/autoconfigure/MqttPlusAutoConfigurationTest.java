@@ -29,13 +29,13 @@ class MqttPlusAutoConfigurationTest {
         assertNotNull(configuration.mqttSubscriptionManager());
         assertNotNull(configuration.errorActionAggregator());
         assertNotNull(configuration.defaultErrorHandlingStrategy());
-        assertNotNull(configuration.listenerInvoker());
+        assertNotNull(configuration.listenerInvoker(configuration.mqttListenerMethodArgumentResolver()));
         assertNotNull(configuration.mqttMessageInterceptors());
         assertNotNull(configuration.payloadConverters(beanFactory));
 
         MqttMessageRouter router = configuration.mqttMessageRouter(
                 configuration.mqttListenerRegistry(),
-                configuration.listenerInvoker(),
+                configuration.listenerInvoker(configuration.mqttListenerMethodArgumentResolver()),
                 configuration.defaultErrorHandlingStrategy(),
                 configuration.errorActionAggregator(),
                 configuration.payloadConverters(beanFactory),

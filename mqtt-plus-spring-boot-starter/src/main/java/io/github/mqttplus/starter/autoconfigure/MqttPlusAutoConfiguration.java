@@ -12,7 +12,6 @@ import io.github.mqttplus.core.error.DefaultErrorHandlingStrategy;
 import io.github.mqttplus.core.error.ErrorActionAggregator;
 import io.github.mqttplus.core.interceptor.MqttMessageInterceptor;
 import io.github.mqttplus.core.invocation.ListenerInvoker;
-import io.github.mqttplus.core.invocation.ReflectiveListenerInvoker;
 import io.github.mqttplus.core.router.DefaultMqttMessageRouter;
 import io.github.mqttplus.core.router.MqttListenerRegistry;
 import io.github.mqttplus.core.router.MqttMessageRouter;
@@ -22,6 +21,7 @@ import io.github.mqttplus.core.subscription.MqttSubscriptionReconciler;
 import io.github.mqttplus.spring.MqttListenerAnnotationProcessor;
 import io.github.mqttplus.spring.event.MqttSubscriptionRefreshEventListener;
 import io.github.mqttplus.spring.invocation.MqttListenerMethodArgumentResolver;
+import io.github.mqttplus.spring.invocation.SpringMqttListenerInvoker;
 import io.github.mqttplus.starter.converter.ByteArrayPayloadConverter;
 import io.github.mqttplus.starter.converter.ByteArrayPayloadSerializer;
 import io.github.mqttplus.starter.converter.StringPayloadConverter;
@@ -88,8 +88,8 @@ public class MqttPlusAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public ListenerInvoker listenerInvoker() {
-        return new ReflectiveListenerInvoker();
+    public ListenerInvoker listenerInvoker(MqttListenerMethodArgumentResolver argumentResolver) {
+        return new SpringMqttListenerInvoker(argumentResolver);
     }
 
     @Bean(name = "mqttPlusPayloadConverters")
