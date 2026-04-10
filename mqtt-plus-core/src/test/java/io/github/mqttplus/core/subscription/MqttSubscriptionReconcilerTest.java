@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -96,6 +97,16 @@ class MqttSubscriptionReconcilerTest {
         @Override
         public CompletableFuture<Void> publishAsync(String topic, byte[] payload, int qos, boolean retained) {
             return CompletableFuture.completedFuture(null);
+        }
+
+        @Override
+        public CompletableFuture<Void> publishAsync(String topic, byte[] payload, Executor executor) {
+            return publishAsync(topic, payload, 0, false, executor);
+        }
+
+        @Override
+        public CompletableFuture<Void> publishAsync(String topic, byte[] payload, int qos, boolean retained, Executor executor) {
+            return CompletableFuture.runAsync(() -> {}, executor);
         }
 
         @Override

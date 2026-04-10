@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -149,6 +150,17 @@ public final class PahoMqttClientAdapter implements MqttClientAdapter {
     @Override
     public CompletableFuture<Void> publishAsync(String topic, byte[] payload, int qos, boolean retained) {
         return CompletableFuture.runAsync(() -> publish(topic, payload, qos, retained));
+    }
+
+    @Override
+    public CompletableFuture<Void> publishAsync(String topic, byte[] payload, Executor executor) {
+        return publishAsync(topic, payload, 0, false, executor);
+    }
+
+    @Override
+    public CompletableFuture<Void> publishAsync(String topic, byte[] payload, int qos, boolean retained, Executor executor) {
+        if (executor == null) throw new NullPointerException();
+        return CompletableFuture.runAsync(() -> publish(topic, payload, qos, retained), executor);
     }
 
     @Override

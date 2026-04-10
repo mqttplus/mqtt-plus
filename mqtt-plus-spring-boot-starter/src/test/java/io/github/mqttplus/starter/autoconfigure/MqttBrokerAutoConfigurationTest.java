@@ -1,10 +1,6 @@
 package io.github.mqttplus.starter.autoconfigure;
 
-import io.github.mqttplus.core.adapter.DefaultMqttClientAdapterRegistry;
-import io.github.mqttplus.core.adapter.MqttClientAdapter;
-import io.github.mqttplus.core.adapter.MqttClientAdapterFactory;
-import io.github.mqttplus.core.adapter.MqttConnectionListener;
-import io.github.mqttplus.core.adapter.MqttInboundMessageSink;
+import io.github.mqttplus.core.adapter.*;
 import io.github.mqttplus.core.model.MqttBrokerDefinition;
 import io.github.mqttplus.starter.properties.MqttPlusProperties;
 import org.junit.jupiter.api.Test;
@@ -12,11 +8,9 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class MqttBrokerAutoConfigurationTest {
 
@@ -31,7 +25,8 @@ class MqttBrokerAutoConfigurationTest {
                 properties,
                 factoryRegistry,
                 adapterRegistry,
-                (brokerId, topic, payload, headers) -> { },
+                (brokerId, topic, payload, headers) -> {
+                },
                 List.of(new NoOpConnectionListener()));
 
         assertTrue(adapter.connected);
@@ -50,7 +45,8 @@ class MqttBrokerAutoConfigurationTest {
                 properties,
                 factoryRegistry,
                 adapterRegistry,
-                (brokerId, topic, payload, headers) -> { },
+                (brokerId, topic, payload, headers) -> {
+                },
                 listeners);
 
         assertEquals(2, adapter.connectionListeners.size());
@@ -68,7 +64,8 @@ class MqttBrokerAutoConfigurationTest {
                         properties,
                         factoryRegistry,
                         adapterRegistry,
-                        (brokerId, topic, payload, headers) -> { },
+                        (brokerId, topic, payload, headers) -> {
+                        },
                         List.of(new NoOpConnectionListener())));
 
         assertEquals("connect failed", exception.getMessage());
@@ -166,6 +163,16 @@ class MqttBrokerAutoConfigurationTest {
 
         @Override
         public CompletableFuture<Void> publishAsync(String topic, byte[] payload, int qos, boolean retained) {
+            return CompletableFuture.completedFuture(null);
+        }
+
+        @Override
+        public CompletableFuture<Void> publishAsync(String topic, byte[] payload, Executor executor) {
+            return publishAsync(topic, payload, 0, false, executor);
+        }
+
+        @Override
+        public CompletableFuture<Void> publishAsync(String topic, byte[] payload, int qos, boolean retained, Executor executor) {
             return CompletableFuture.completedFuture(null);
         }
 
