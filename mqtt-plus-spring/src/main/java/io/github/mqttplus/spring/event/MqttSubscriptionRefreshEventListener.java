@@ -17,14 +17,14 @@ public final class MqttSubscriptionRefreshEventListener {
 
     @EventListener
     public void onApplicationEvent(MqttSubscriptionRefreshEvent event) {
-        if (event.action() == MqttSubscriptionRefreshEvent.Action.SUBSCRIBE) {
-            subscriptionManager.addSubscription(event.brokerId(), event.topic(), event.qos());
-            adapterRegistry.find(event.brokerId())
-                    .ifPresent(adapter -> adapter.subscribe(event.topic(), event.qos()));
+        if (event.getAction() == MqttSubscriptionRefreshEvent.Action.SUBSCRIBE) {
+            subscriptionManager.addSubscription(event.getBrokerId(), event.getTopic(), event.getQos());
+            adapterRegistry.find(event.getBrokerId())
+                    .ifPresent(adapter -> adapter.subscribe(event.getTopic(), event.getQos()));
             return;
         }
-        subscriptionManager.removeSubscription(event.brokerId(), event.topic());
-        adapterRegistry.find(event.brokerId())
-                .ifPresent(adapter -> adapter.unsubscribe(event.topic()));
+        subscriptionManager.removeSubscription(event.getBrokerId(), event.getTopic());
+        adapterRegistry.find(event.getBrokerId())
+                .ifPresent(adapter -> adapter.unsubscribe(event.getTopic()));
     }
 }
