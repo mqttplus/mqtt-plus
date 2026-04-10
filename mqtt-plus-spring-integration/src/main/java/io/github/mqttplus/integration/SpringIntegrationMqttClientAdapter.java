@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 public final class SpringIntegrationMqttClientAdapter implements MqttClientAdapter {
 
@@ -156,6 +157,16 @@ public final class SpringIntegrationMqttClientAdapter implements MqttClientAdapt
     @Override
     public CompletableFuture<Void> publishAsync(String topic, byte[] payload, int qos, boolean retained) {
         return CompletableFuture.runAsync(() -> publish(topic, payload, qos, retained));
+    }
+
+    @Override
+    public CompletableFuture<Void> publishAsync(String topic, byte[] payload, Executor executor) {
+        return publishAsync(topic, payload, 0, false, executor);
+    }
+
+    @Override
+    public CompletableFuture<Void> publishAsync(String topic, byte[] payload, int qos, boolean retained, Executor executor) {
+        return CompletableFuture.completedFuture(null);
     }
 
     @Override
