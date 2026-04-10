@@ -1,6 +1,10 @@
 package io.github.mqttplus.starter.autoconfigure;
 
-import io.github.mqttplus.core.adapter.*;
+import io.github.mqttplus.core.adapter.DefaultMqttClientAdapterRegistry;
+import io.github.mqttplus.core.adapter.MqttClientAdapter;
+import io.github.mqttplus.core.adapter.MqttClientAdapterFactory;
+import io.github.mqttplus.core.adapter.MqttConnectionListener;
+import io.github.mqttplus.core.adapter.MqttInboundMessageSink;
 import io.github.mqttplus.core.model.MqttBrokerDefinition;
 import io.github.mqttplus.starter.properties.MqttPlusProperties;
 import org.junit.jupiter.api.Test;
@@ -25,8 +29,7 @@ class MqttBrokerAutoConfigurationTest {
                 properties,
                 factoryRegistry,
                 adapterRegistry,
-                (brokerId, topic, payload, headers) -> {
-                },
+                (brokerId, topic, payload, headers) -> {},
                 List.of(new NoOpConnectionListener()));
 
         assertTrue(adapter.connected);
@@ -45,8 +48,7 @@ class MqttBrokerAutoConfigurationTest {
                 properties,
                 factoryRegistry,
                 adapterRegistry,
-                (brokerId, topic, payload, headers) -> {
-                },
+                (brokerId, topic, payload, headers) -> {},
                 listeners);
 
         assertEquals(2, adapter.connectionListeners.size());
@@ -64,8 +66,7 @@ class MqttBrokerAutoConfigurationTest {
                         properties,
                         factoryRegistry,
                         adapterRegistry,
-                        (brokerId, topic, payload, headers) -> {
-                        },
+                        (brokerId, topic, payload, headers) -> {},
                         List.of(new NoOpConnectionListener())));
 
         assertEquals("connect failed", exception.getMessage());
