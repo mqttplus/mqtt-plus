@@ -13,12 +13,12 @@ on:
           - central
           - both
   push:
-    branches:
-      - main
+    tags:
+      - 'v*'
 
 jobs:
   publish-github-packages:
-    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && (inputs.publish-target == 'github' || inputs.publish-target == 'both'))
+    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && (inputs.publish-target == 'github' || inputs.publish-target == 'both'))
     runs-on: ubuntu-latest
     permissions:
       contents: read
