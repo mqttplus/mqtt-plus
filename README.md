@@ -5,7 +5,7 @@
 **Annotation-driven MQTT framework for Spring Boot**
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![Java](https://img.shields.io/badge/Java-17%2B-orange.svg)](https://adoptium.net)
+[![Java](https://img.shields.io/badge/Java-17%2B-orange.svg)](https://www.oracle.com/java)
 [![MQTT](https://img.shields.io/badge/MQTT-3.1.1-green.svg)](https://mqtt.org)
 
 [English](#english) | [中文](#中文)
