@@ -7,20 +7,29 @@ import io.github.mqttplus.core.converter.PayloadSerializer;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 public final class DefaultMqttTemplate implements MqttTemplate {
 
     private final MqttClientAdapterRegistry adapterRegistry;
     private final List<PayloadSerializer> serializers;
+    private final Executor executor;
 
     public DefaultMqttTemplate(MqttClientAdapterRegistry adapterRegistry) {
         this(adapterRegistry, List.of());
     }
 
     public DefaultMqttTemplate(MqttClientAdapterRegistry adapterRegistry,
-                               List<PayloadSerializer> serializers) {
+            List<PayloadSerializer> serializers) {
+        this(adapterRegistry, serializers, null);
+    }
+
+    public DefaultMqttTemplate(MqttClientAdapterRegistry adapterRegistry,
+            List<PayloadSerializer> serializers,
+            Executor executor) {
         this.adapterRegistry = adapterRegistry;
         this.serializers = List.copyOf(serializers);
+        this.executor = executor;
     }
 
     @Override
@@ -42,6 +51,9 @@ public final class DefaultMqttTemplate implements MqttTemplate {
     @Override
     public CompletableFuture<Void> publishAsync(String brokerId, String topic, Object payload, int qos, boolean retained) {
         MqttClientAdapter adapter = resolveAdapter(brokerId);
+        if (executor != null) {
+            return adapter.publishAsync(topic, serializePayload(payload), qos, retained, executor);
+        }
         return adapter.publishAsync(topic, serializePayload(payload), qos, retained);
     }
 
