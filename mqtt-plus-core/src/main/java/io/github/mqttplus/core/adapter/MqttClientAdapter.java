@@ -28,9 +28,14 @@ public interface MqttClientAdapter {
 
     CompletableFuture<Void> publishAsync(String topic, byte[] payload, int qos, boolean retained);
 
-    CompletableFuture<Void> publishAsync(String topic, byte[] payload, Executor executor);
+    default CompletableFuture<Void> publishAsync(String topic, byte[] payload, Executor executor) {
+        return publishAsync(topic, payload, 0, false, executor);
+    }
 
-    CompletableFuture<Void> publishAsync(String topic, byte[] payload, int qos, boolean retained, Executor executor);
+    default CompletableFuture<Void> publishAsync(String topic, byte[] payload, int qos, boolean retained,
+            Executor executor) {
+        return CompletableFuture.completedFuture(null);
+    }
 
     boolean supportsManualAck();
 
