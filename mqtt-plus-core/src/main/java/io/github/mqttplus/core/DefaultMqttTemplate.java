@@ -57,6 +57,19 @@ public final class DefaultMqttTemplate implements MqttTemplate {
         return adapter.publishAsync(topic, serializePayload(payload), qos, retained);
     }
 
+    @Override
+    public CompletableFuture<Void> publishAsync(String brokerId, String topic, Object payload, Executor executor) {
+        return publishAsync(brokerId, topic, payload, 0, false, executor);
+    }
+
+    @Override
+    public CompletableFuture<Void> publishAsync(String brokerId, String topic, Object payload, int qos,
+            boolean retained, Executor executor) {
+        if (executor == null) throw new NullPointerException();
+        MqttClientAdapter adapter = resolveAdapter(brokerId);
+        return adapter.publishAsync(topic, serializePayload(payload), qos, retained, executor);
+    }
+
     private MqttClientAdapter resolveAdapter(String brokerId) {
         return adapterRegistry.find(brokerId)
                 .orElseThrow(() -> new IllegalArgumentException("No adapter registered for broker: " + brokerId));
