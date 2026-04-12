@@ -7,18 +7,18 @@ import io.github.mqttplus.core.converter.PayloadSerializer;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 public final class DefaultMqttTemplate implements MqttTemplate {
 
     private final MqttClientAdapterRegistry adapterRegistry;
     private final List<PayloadSerializer> serializers;
-
     public DefaultMqttTemplate(MqttClientAdapterRegistry adapterRegistry) {
         this(adapterRegistry, List.of());
     }
 
     public DefaultMqttTemplate(MqttClientAdapterRegistry adapterRegistry,
-                               List<PayloadSerializer> serializers) {
+            List<PayloadSerializer> serializers) {
         this.adapterRegistry = adapterRegistry;
         this.serializers = List.copyOf(serializers);
     }
@@ -43,6 +43,19 @@ public final class DefaultMqttTemplate implements MqttTemplate {
     public CompletableFuture<Void> publishAsync(String brokerId, String topic, Object payload, int qos, boolean retained) {
         MqttClientAdapter adapter = resolveAdapter(brokerId);
         return adapter.publishAsync(topic, serializePayload(payload), qos, retained);
+    }
+
+    @Override
+    public CompletableFuture<Void> publishAsync(String brokerId, String topic, Object payload, Executor executor) {
+        return publishAsync(brokerId, topic, payload, 0, false, executor);
+    }
+
+    @Override
+    public CompletableFuture<Void> publishAsync(String brokerId, String topic, Object payload, int qos,
+            boolean retained, Executor executor) {
+        if (executor == null) throw new NullPointerException();
+        MqttClientAdapter adapter = resolveAdapter(brokerId);
+        return adapter.publishAsync(topic, serializePayload(payload), qos, retained, executor);
     }
 
     private MqttClientAdapter resolveAdapter(String brokerId) {

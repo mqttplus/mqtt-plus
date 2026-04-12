@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 @SpringBootTest(properties = {"samples.publish-on-startup=false", "mqtt-plus.brokers.publicBroker.adapter=paho", "mqtt-plus.brokers.privateBroker.adapter=paho"})
 @Import(SampleMultiBrokerApplicationTest.TestConfig.class)
@@ -94,6 +95,17 @@ class SampleMultiBrokerApplicationTest {
 
         @Override
         public CompletableFuture<Void> publishAsync(String topic, byte[] payload, int qos, boolean retained) {
+            return CompletableFuture.completedFuture(null);
+        }
+
+        @Override
+        public CompletableFuture<Void> publishAsync(String topic, byte[] payload, Executor executor) {
+            return publishAsync(topic, payload, 0, false, executor);
+        }
+
+        @Override
+        public CompletableFuture<Void> publishAsync(String topic, byte[] payload, int qos, boolean retained,
+                Executor executor) {
             return CompletableFuture.completedFuture(null);
         }
 

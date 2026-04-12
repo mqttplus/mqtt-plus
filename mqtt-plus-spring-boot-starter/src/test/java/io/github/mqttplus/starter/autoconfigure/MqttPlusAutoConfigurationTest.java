@@ -14,6 +14,7 @@ import org.springframework.beans.factory.support.StaticListableBeanFactory;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -155,6 +156,17 @@ class MqttPlusAutoConfigurationTest {
 
         @Override
         public CompletableFuture<Void> publishAsync(String topic, byte[] payload, int qos, boolean retained) {
+            return CompletableFuture.completedFuture(null);
+        }
+
+        @Override
+        public CompletableFuture<Void> publishAsync(String topic, byte[] payload, Executor executor) {
+            return publishAsync(topic, payload, 0, false, executor);
+        }
+
+        @Override
+        public CompletableFuture<Void> publishAsync(String topic, byte[] payload, int qos, boolean retained,
+                Executor executor) {
             return CompletableFuture.completedFuture(null);
         }
 
