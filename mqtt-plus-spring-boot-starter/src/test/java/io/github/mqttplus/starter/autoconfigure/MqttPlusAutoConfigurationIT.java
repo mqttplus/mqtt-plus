@@ -32,10 +32,13 @@ class MqttPlusAutoConfigurationIT {
         contextRunner.run(context -> {
             assertThat(context).hasBean("pahoMqttClientAdapterFactory");
             assertThat(context).hasBean("springIntegrationMqttClientAdapterFactory");
+            assertThat(context).hasBean("hiveMqMqttClientAdapterFactory");
             assertThat(context.getBean("pahoMqttClientAdapterFactory", MqttClientAdapterFactory.class).getClass().getName())
                     .isEqualTo("io.github.mqttplus.paho.PahoMqttClientAdapterFactory");
             assertThat(context.getBean("springIntegrationMqttClientAdapterFactory", MqttClientAdapterFactory.class).getClass().getName())
                     .isEqualTo("io.github.mqttplus.integration.SpringIntegrationMqttClientAdapterFactory");
+            assertThat(context.getBean("hiveMqMqttClientAdapterFactory", MqttClientAdapterFactory.class).getClass().getName())
+                    .isEqualTo("io.github.mqttplus.hivemq.HiveMqMqttClientAdapterFactory");
         });
     }
 
@@ -72,6 +75,7 @@ class MqttPlusAutoConfigurationIT {
         contextRunner.run(context -> {
             MqttClientAdapterFactoryRegistry registry = context.getBean(MqttClientAdapterFactoryRegistry.class);
             assertThat(registry.resolveFactory(null, "3.1.1").adapterId()).isEqualTo("spring-integration");
+            assertThat(registry.resolveFactory(null, "5.0").adapterId()).isEqualTo("hivemq");
         });
     }
 
@@ -107,7 +111,7 @@ class MqttPlusAutoConfigurationIT {
     @Test
     void shouldFailFastWhenAdapterFactoryIsMissing() {
         new ApplicationContextRunner()
-                .withClassLoader(new FilteredClassLoader("io.github.mqttplus.paho", "io.github.mqttplus.integration"))
+                .withClassLoader(new FilteredClassLoader("io.github.mqttplus.paho", "io.github.mqttplus.integration", "io.github.mqttplus.hivemq"))
                 .withConfiguration(AutoConfigurations.of(MqttPlusAutoConfiguration.class))
                 .withBean(ObjectMapper.class, ObjectMapper::new)
                 .withPropertyValues(
