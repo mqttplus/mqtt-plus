@@ -58,6 +58,16 @@ class MqttClientAdapterFactoryRegistryTest {
         assertEquals("No MQTT adapter factory registered for version: 5.0", exception.getMessage());
     }
 
+    @Test
+    void shouldResolveHiveMqFactoryForMqtt5() {
+        MqttClientAdapterFactoryRegistry registry = new MqttClientAdapterFactoryRegistry(List.of(
+                new StubFactory("paho", "3.1.1"),
+                new StubFactory("hivemq", "5.0")));
+
+        assertEquals("hivemq", registry.resolveFactory(null, "5.0").adapterId());
+        assertEquals("hivemq", registry.resolveFactory("hivemq", "5.0").adapterId());
+    }
+
     private static final class StubFactory implements MqttClientAdapterFactory {
         private final String adapterId;
         private final String version;

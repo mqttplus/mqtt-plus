@@ -52,6 +52,7 @@ public class MqttPlusAutoConfiguration {
     private static final String JACKSON_SERIALIZER_CLASS_NAME = "io.github.mqttplus.starter.converter.JacksonPayloadSerializer";
     private static final String PAHO_FACTORY_CLASS_NAME = "io.github.mqttplus.paho.PahoMqttClientAdapterFactory";
     private static final String SPRING_INTEGRATION_FACTORY_CLASS_NAME = "io.github.mqttplus.integration.SpringIntegrationMqttClientAdapterFactory";
+    private static final String HIVEMQ_FACTORY_CLASS_NAME = "io.github.mqttplus.hivemq.HiveMqMqttClientAdapterFactory";
     private static final String BYTE_ARRAY_SERIALIZER_BEAN_NAME = "byteArrayPayloadSerializer";
     private static final String STRING_SERIALIZER_BEAN_NAME = "stringPayloadSerializer";
     private static final String JACKSON_SERIALIZER_BEAN_NAME = "jacksonPayloadSerializer";
@@ -207,6 +208,13 @@ public class MqttPlusAutoConfiguration {
     @ConditionalOnMissingBean(name = "springIntegrationMqttClientAdapterFactory")
     public MqttClientAdapterFactory springIntegrationMqttClientAdapterFactory() {
         return instantiateFactory(SPRING_INTEGRATION_FACTORY_CLASS_NAME);
+    }
+
+    @Bean
+    @ConditionalOnClass(name = HIVEMQ_FACTORY_CLASS_NAME)
+    @ConditionalOnMissingBean(name = "hiveMqMqttClientAdapterFactory")
+    public MqttClientAdapterFactory hiveMqMqttClientAdapterFactory() {
+        return instantiateFactory(HIVEMQ_FACTORY_CLASS_NAME);
     }
 
     @Bean

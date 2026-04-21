@@ -31,7 +31,7 @@ public void onStatus(String payload) {
 
 ### Current Scope
 
-This README reflects the `v1.1.0` release scope:
+This README reflects the `v1.2.0-SNAPSHOT` development scope:
 
 - Included: `mqtt-plus-core`, `mqtt-plus-paho`, `mqtt-plus-spring-integration`, `mqtt-plus-spring`, `mqtt-plus-spring-boot-starter`, `mqtt-plus-test`
 - Deferred: `mqtt-plus-hivemq`, MQTT 5.0 support, runtime broker connection reconfiguration
@@ -51,19 +51,19 @@ This README reflects the `v1.1.0` release scope:
 
 **1. Add dependencies**
 
-For Spring Boot applications in `v1.1.0`, use the starter and the Spring Integration adapter:
+For Spring Boot applications in `v1.2.0-SNAPSHOT`, use the starter and the Spring Integration adapter:
 
 ```xml
 <dependency>
     <groupId>io.github.mqttplus</groupId>
     <artifactId>mqtt-plus-spring-boot-starter</artifactId>
-    <version>1.1.0</version>
+    <version>1.2.0-SNAPSHOT</version>
 </dependency>
 
 <dependency>
     <groupId>io.github.mqttplus</groupId>
     <artifactId>mqtt-plus-spring-integration</artifactId>
-    <version>1.1.0</version>
+    <version>1.2.0-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -227,7 +227,7 @@ public void onStatus(String payload) {
 
 ### 当前范围
 
-本 README 对应 `v1.1.0` 正式发布范围：
+本 README 对应 `v1.2.0-SNAPSHOT` 开发阶段范围：
 
 - 已包含：`mqtt-plus-core`、`mqtt-plus-paho`、`mqtt-plus-spring-integration`、`mqtt-plus-spring`、`mqtt-plus-spring-boot-starter`、`mqtt-plus-test`
 - 暂缓：`mqtt-plus-hivemq`、MQTT 5.0 支持、运行时动态修改 broker 连接信息
@@ -247,19 +247,19 @@ public void onStatus(String payload) {
 
 **1. 添加依赖**
 
-对于 `v1.1.0` 的 Spring Boot 应用，推荐使用 starter + Spring Integration adapter：
+对于 `v1.2.0-SNAPSHOT` 的 Spring Boot 应用，推荐使用 starter + Spring Integration adapter：
 
 ```xml
 <dependency>
     <groupId>io.github.mqttplus</groupId>
     <artifactId>mqtt-plus-spring-boot-starter</artifactId>
-    <version>1.1.0</version>
+    <version>1.2.0-SNAPSHOT</version>
 </dependency>
 
 <dependency>
     <groupId>io.github.mqttplus</groupId>
     <artifactId>mqtt-plus-spring-integration</artifactId>
-    <version>1.1.0</version>
+    <version>1.2.0-SNAPSHOT</version>
 </dependency>
 ```
 

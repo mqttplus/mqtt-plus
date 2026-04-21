@@ -45,6 +45,12 @@
             <optional>true</optional>
         </dependency>
         <dependency>
+            <groupId>io.github.mqttplus</groupId>
+            <artifactId>mqtt-plus-hivemq</artifactId>
+            <version>${project.version}</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
