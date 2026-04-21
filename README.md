@@ -6,7 +6,7 @@
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Java](https://img.shields.io/badge/Java-17%2B-orange.svg)](https://adoptium.net)
-[![MQTT](https://img.shields.io/badge/MQTT-3.1.1-green.svg)](https://mqtt.org)
+[![MQTT](https://img.shields.io/badge/MQTT-3.1.1%20%7C%205.0-green.svg)](https://mqtt.org)
 
 [English](#english) | [中文](#中文)
 
@@ -33,8 +33,8 @@ public void onStatus(String payload) {
 
 This README reflects the `v1.2.0-SNAPSHOT` development scope:
 
-- Included: `mqtt-plus-core`, `mqtt-plus-paho`, `mqtt-plus-spring-integration`, `mqtt-plus-spring`, `mqtt-plus-spring-boot-starter`, `mqtt-plus-test`
-- Deferred: `mqtt-plus-hivemq`, MQTT 5.0 support, runtime broker connection reconfiguration
+- Included: `mqtt-plus-core`, `mqtt-plus-paho`, `mqtt-plus-hivemq`, `mqtt-plus-spring-integration`, `mqtt-plus-spring`, `mqtt-plus-spring-boot-starter`, `mqtt-plus-test`
+- Deferred: runtime broker connection reconfiguration, deeper MQTT 5 property exposure
 
 ### Features
 
@@ -44,6 +44,7 @@ This README reflects the `v1.2.0-SNAPSHOT` development scope:
 - Subscription recovery after reconnect
 - `MqttTemplate` sync / async publish with `qos` and `retained`
 - Spring Boot starter with per-broker adapter selection
+- HiveMQ-based MQTT 5 adapter support
 - Embedded-broker test support via `@EnableMqttPlusTest`
 - Non-Spring capable core plus raw Paho fallback adapter
 
@@ -51,7 +52,7 @@ This README reflects the `v1.2.0-SNAPSHOT` development scope:
 
 **1. Add dependencies**
 
-For Spring Boot applications in `v1.2.0-SNAPSHOT`, use the starter and the Spring Integration adapter:
+For Spring Boot applications in `v1.2.0-SNAPSHOT`, use the starter with an adapter that matches your broker protocol:
 
 ```xml
 <dependency>
@@ -67,7 +68,17 @@ For Spring Boot applications in `v1.2.0-SNAPSHOT`, use the starter and the Sprin
 </dependency>
 ```
 
-If you prefer the raw Paho transport instead, replace the second dependency with `mqtt-plus-paho`.
+For MQTT 5 brokers, add the HiveMQ adapter instead:
+
+```xml
+<dependency>
+    <groupId>io.github.mqttplus</groupId>
+    <artifactId>mqtt-plus-hivemq</artifactId>
+    <version>1.2.0-SNAPSHOT</version>
+</dependency>
+```
+
+If you prefer the raw Paho transport for MQTT 3.1.1, replace the second dependency with `mqtt-plus-paho`.
 
 **JSON payload note**
 
@@ -87,6 +98,20 @@ mqtt-plus:
       port: 1883
       client-id: my-app-001
       mqtt-version: 3.1.1
+      clean-session: false
+```
+
+For MQTT 5 with HiveMQ:
+
+```yaml
+mqtt-plus:
+  brokers:
+    cloud:
+      host: broker.example.com
+      port: 1883
+      client-id: my-app-001
+      mqtt-version: 5.0
+      adapter: hivemq
       clean-session: false
 ```
 
@@ -132,8 +157,8 @@ mqtt-plus:
 
 Supported selection model:
 
-- `adapter`: transport identity such as `spring-integration` or `paho`
-- `mqtt-version`: protocol compatibility such as `3.1.1`
+- `adapter`: transport identity such as `spring-integration`, `paho`, or `hivemq`
+- `mqtt-version`: protocol compatibility such as `3.1.1` or `5.0`
 - `clean-session`: session behavior passed to the adapter transport
 
 ### Dynamic Subscription
@@ -172,6 +197,7 @@ All three samples are covered by smoke tests in CI.
 |------|------|
 | `mqtt-plus-core` | Core abstractions, routing, reconciliation, and SPI |
 | `mqtt-plus-paho` | Raw Eclipse Paho adapter for MQTT 3.1.1 |
+| `mqtt-plus-hivemq` | HiveMQ-based adapter for MQTT 5.0 |
 | `mqtt-plus-spring-integration` | Spring Integration-based adapter recommended for Spring Boot |
 | `mqtt-plus-spring` | Annotation scanning, method resolution, and event bridging |
 | `mqtt-plus-spring-boot-starter` | Auto-configuration, YAML binding, adapter selection |
@@ -184,7 +210,7 @@ All three samples are covered by smoke tests in CI.
 | Annotation-driven listeners | ✅ | ❌ | ❌ |
 | Multi-broker | ✅ | ⚠️ | ❌ |
 | Dynamic subscriptions | ✅ | ⚠️ | ⚠️ |
-| MQTT 5.0 | ⚠️ | ❌ | ⚠️ |
+| MQTT 5.0 | ✅ | ❌ | ⚠️ |
 | Spring Boot Starter | ✅ | ❌ | ❌ |
 | Non-Spring usage | ✅ | ❌ | ✅ |
 | Interceptor chain | ✅ | ❌ | ❌ |
@@ -196,6 +222,7 @@ All three samples are covered by smoke tests in CI.
 - `MqttTemplate` requires an explicit broker id for publishing
 - `MqttTestTemplate.simulateIncoming(...)` is a fast router-level testing utility, not a full protocol simulator
 - Runtime broker connection reconfiguration is outside the current scope
+- Advanced MQTT 5 properties are not yet exposed as first-class application APIs
 - Multiple listeners can match the same topic and will all be invoked
 - Listener invocation still depends on payload conversion: a String listener can consume plain text, while a typed listener such as DroneStatus requires payload bytes that can be deserialized into that target type (for example JSON when using Jackson)
 
@@ -229,8 +256,8 @@ public void onStatus(String payload) {
 
 本 README 对应 `v1.2.0-SNAPSHOT` 开发阶段范围：
 
-- 已包含：`mqtt-plus-core`、`mqtt-plus-paho`、`mqtt-plus-spring-integration`、`mqtt-plus-spring`、`mqtt-plus-spring-boot-starter`、`mqtt-plus-test`
-- 暂缓：`mqtt-plus-hivemq`、MQTT 5.0 支持、运行时动态修改 broker 连接信息
+- 已包含：`mqtt-plus-core`、`mqtt-plus-paho`、`mqtt-plus-hivemq`、`mqtt-plus-spring-integration`、`mqtt-plus-spring`、`mqtt-plus-spring-boot-starter`、`mqtt-plus-test`
+- 暂缓：运行时动态修改 broker 连接信息、MQTT 5 高级属性暴露
 
 ### 核心能力
 
@@ -240,6 +267,7 @@ public void onStatus(String payload) {
 - 重连后的订阅恢复
 - `MqttTemplate` 支持同步 / 异步发布，以及 `qos`、`retained`
 - starter 支持按 broker 选择 adapter
+- 支持基于 HiveMQ 的 MQTT 5 adapter
 - `@EnableMqttPlusTest` 提供 embedded broker 测试支持
 - 保留非 Spring 场景下的 core + Paho 使用能力
 
@@ -247,7 +275,7 @@ public void onStatus(String payload) {
 
 **1. 添加依赖**
 
-对于 `v1.2.0-SNAPSHOT` 的 Spring Boot 应用，推荐使用 starter + Spring Integration adapter：
+对于 `v1.2.0-SNAPSHOT` 的 Spring Boot 应用，推荐使用 starter + 与 broker 协议匹配的 adapter：
 
 ```xml
 <dependency>
@@ -263,7 +291,17 @@ public void onStatus(String payload) {
 </dependency>
 ```
 
-如果你更希望继续使用 raw Paho，可以把第二个依赖换成 `mqtt-plus-paho`。
+如果 broker 是 MQTT 5，可以改用 HiveMQ adapter：
+
+```xml
+<dependency>
+    <groupId>io.github.mqttplus</groupId>
+    <artifactId>mqtt-plus-hivemq</artifactId>
+    <version>1.2.0-SNAPSHOT</version>
+</dependency>
+```
+
+如果你更希望继续使用 raw Paho 的 MQTT 3.1.1 传输，可以把第二个依赖换成 `mqtt-plus-paho`。
 
 **JSON 负载说明**
 
@@ -283,6 +321,20 @@ mqtt-plus:
       port: 1883
       client-id: my-app-001
       mqtt-version: 3.1.1
+      clean-session: false
+```
+
+如果你要配置 MQTT 5 + HiveMQ，可以使用：
+
+```yaml
+mqtt-plus:
+  brokers:
+    cloud:
+      host: broker.example.com
+      port: 1883
+      client-id: my-app-001
+      mqtt-version: 5.0
+      adapter: hivemq
       clean-session: false
 ```
 
@@ -328,8 +380,8 @@ mqtt-plus:
 
 当前选择模型中：
 
-- `adapter`：transport 身份，例如 `spring-integration`、`paho`
-- `mqtt-version`：协议兼容性，例如 `3.1.1`
+- `adapter`：transport 身份，例如 `spring-integration`、`paho`、`hivemq`
+- `mqtt-version`：协议兼容性，例如 `3.1.1` 或 `5.0`
 - `clean-session`：传递给 adapter transport 的会话行为
 
 ### 动态订阅
@@ -368,6 +420,7 @@ publisher.publishEvent(new MqttSubscriptionRefreshEvent(
 |------|------|
 | `mqtt-plus-core` | 核心抽象、路由、订阅协调与 SPI |
 | `mqtt-plus-paho` | 基于 Eclipse Paho 的 MQTT 3.1.1 原生 adapter |
+| `mqtt-plus-hivemq` | 基于 HiveMQ 的 MQTT 5.0 adapter |
 | `mqtt-plus-spring-integration` | 基于 Spring Integration 的 Spring Boot 推荐 adapter |
 | `mqtt-plus-spring` | 注解扫描、方法参数解析、事件桥接 |
 | `mqtt-plus-spring-boot-starter` | 自动配置、YAML 绑定、adapter 选择 |
@@ -380,7 +433,7 @@ publisher.publishEvent(new MqttSubscriptionRefreshEvent(
 | 注解驱动监听 | ✅ | ❌ | ❌ |
 | 多 broker | ✅ | ⚠️ | ❌ |
 | 动态订阅 | ✅ | ⚠️ | ⚠️ |
-| MQTT 5.0 | ⚠️ | ❌ | ⚠️ |
+| MQTT 5.0 | ✅ | ❌ | ⚠️ |
 | Spring Boot Starter | ✅ | ❌ | ❌ |
 | 非 Spring 使用 | ✅ | ❌ | ✅ |
 | 拦截器链 | ✅ | ❌ | ❌ |
@@ -392,6 +445,9 @@ publisher.publishEvent(new MqttSubscriptionRefreshEvent(
 - `MqttTemplate` 发布时必须显式指定 broker id
 - `MqttTestTemplate.simulateIncoming(...)` 是 router 级快速测试工具，不是完整协议模拟器
 - 运行时动态修改 broker 连接参数不在当前范围内
+- MQTT 5 高级属性当前还没有作为一等应用层 API 完整暴露
+- 多个 listener 仍然可能匹配同一个 topic，并都会被执行
+- listener 的实际可调用性仍然取决于 payload 转换能力：例如 `String` listener 可以消费纯文本，而 `DroneStatus` 这类类型化 listener 仍然要求 payload bytes 能被转换成目标对象（例如结合 Jackson 处理 JSON）
 
 ### 环境要求
 
